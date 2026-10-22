@@ -1,0 +1,6 @@
+{
+  "name": "reels-engine",
+  "version": "0.7.1",
+  "description": "Turn 1-4 talking-head clips into a finished Instagram reel in your own caption style, with a review step before the render.",
+  "author": { "name": "Sam Courtain" }
+}

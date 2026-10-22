@@ -1,0 +1,9 @@
+{
+  "name": "reels-engine",
+  "version": "0.7.1",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "bin": { "reels": "bin/reels.js" },
+  "scripts": { "test": "rm -rf test/.tmp; node --test \"test/*.test.js\"; code=$?; rm -rf test/.tmp; exit $code" }
+}

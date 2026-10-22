@@ -1,0 +1,4 @@
+{ "handle": "",
+  "colors": { "primary": "#1F3A34", "accent": "#E8B44A", "text": "#FFFFFF", "card": "#F5EFE6", "card_text": "#1F1F1F" },
+  "default_style": "starter",
+  "default_target_seconds": 40 }

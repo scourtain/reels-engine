@@ -1,0 +1,16 @@
+{
+  "name": "reels-engine",
+  "owner": {
+    "name": "Sam Courtain"
+  },
+  "plugins": [
+    {
+      "name": "reels-engine",
+      "source": "./",
+      "description": "Talking-head clips to finished reels."
+    }
+  ],
+  "metadata": {
+    "description": "Reels Engine by Inspired Efficiency: turn talking-head clips into finished Instagram reels with Claude."
+  }
+}

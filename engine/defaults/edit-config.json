@@ -1,0 +1,38 @@
+{
+  "lists": {
+    "always_fillers": ["um", "uh", "er", "erm", "ah", "hmm"],
+    "contextual_fillers": ["like", "so", "you know", "i mean", "basically", "actually", "literally", "right", "okay", "kind of", "sort of"],
+    "protected": [{ "word": "so", "position": "sentence_start" }],
+    "restart_cues": ["let me start over", "start again", "one more time", "let me redo that", "scratch that", "wait", "okay again", "take two"],
+    "self_correction": ["no", "i mean", "sorry", "actually", "or rather"],
+    "signposting": ["today i want to talk about", "in this video", "let me explain", "here's the thing", "before we get started", "let's dive in", "without further ado"],
+    "hedges": ["i think", "i feel like", "kind of", "sort of", "just", "maybe", "probably", "a little bit", "honestly"],
+    "cta_phrases": ["comment", "link in bio", "dm me", "follow for", "save this"]
+  },
+  "thresholds": {
+    "utterance_break_ms": 700,
+    "utterance_max_words": 30,
+    "retake_similarity": 0.6,
+    "retake_first_words": 4,
+    "retake_window_s": 60,
+    "long_silence_before_retake_ms": 1500,
+    "low_confidence": 0.6,
+    "gap_between_ms": 150,
+    "gap_between_min_ms": 100,
+    "gap_between_max_ms": 250,
+    "gap_within_trigger_ms": 300,
+    "gap_within_target_ms": 120,
+    "gap_floor_ms": 60,
+    "gap_punchline_ms": 400,
+    "harsh_clearance_ms": 30,
+    "snap_window_ms": 50,
+    "pre_roll_ms": 30,
+    "post_roll_ms": 40,
+    "post_roll_soft_ms": 80,
+    "crossfade_ms": 15,
+    "silence_margin_db": 12,
+    "silence_floor_db": -55,
+    "silence_ceiling_db": -30,
+    "silence_min_ms": 60
+  }
+}

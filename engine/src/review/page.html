@@ -1,0 +1,1096 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Review your reel</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg:#f5f3ef; --surface:#ffffff; --sunken:#efece6; --ink:#1f1e1c; --muted:#6b6862; --faint:#9a968f;
+    --line:#e3dfd8; --line-strong:#cfcac1;
+    --accent:#2f6f5e; --accent-ink:#ffffff; --accent-soft:#e3efe9;
+    --cut:#a8a39b; --warn:#a15c00; --warn-soft:#fbeedd;
+    --radius:12px; --radius-sm:9px;
+    --shadow:0 1px 2px rgba(40,35,25,.05), 0 1px 1px rgba(40,35,25,.03);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg:#1a1917; --surface:#232220; --sunken:#1e1d1b; --ink:#ece9e3; --muted:#a19d95; --faint:#78746d;
+      --line:#34322e; --line-strong:#46433e;
+      --accent:#5fae96; --accent-ink:#0f1f1a; --accent-soft:#223630;
+      --cut:#6d6962; --warn:#e3a35a; --warn-soft:#3a2c1c;
+      --shadow:none;
+    }
+  }
+  * { box-sizing:border-box; }
+  html { -webkit-text-size-adjust:100%; }
+  body { margin:0; min-height:100vh; min-height:100dvh; font:16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background:var(--bg); color:var(--ink); overflow-x:hidden; -webkit-font-smoothing:antialiased; }
+  button, input, select, textarea { font:inherit; color:inherit; }
+  svg { display:block; flex:none; }
+  :focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+
+  /* Header */
+  .top { max-width:1120px; margin:0 auto; padding:28px 16px 4px; }
+  .top h1 { margin:0; font-size:clamp(22px, 4.5vw, 28px); line-height:1.15; letter-spacing:-0.015em; font-weight:700; }
+  .top p { margin:6px 0 0; color:var(--muted); font-size:15px; max-width:52ch; }
+
+  /* Layout */
+  .wrap { display:grid; grid-template-columns:minmax(0,340px) minmax(0,1fr); gap:32px; max-width:1120px; margin:0 auto; padding:20px 16px 140px; }
+  .player { position:sticky; top:16px; align-self:start; display:grid; gap:12px; }
+  video { width:min(100%, calc(max(100dvh - 480px, 300px) * 9 / 16)); margin:0 auto; aspect-ratio:9/16; background:#000; border-radius:var(--radius); display:block; object-fit:contain; box-shadow:0 8px 24px rgba(30,25,15,.12); }
+
+  .card { background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:14px; box-shadow:var(--shadow); }
+
+  /* Running length */
+  .meta { display:flex; flex-wrap:wrap; gap:10px 12px; align-items:center; justify-content:space-between; }
+  .meta > span { color:var(--muted); font-size:14px; font-variant-numeric:tabular-nums; }
+  .meta strong { display:inline-block; color:var(--ink); font-size:22px; font-weight:700; letter-spacing:-0.01em; margin:0 2px 0 6px; vertical-align:-2px; }
+  .meta strong.over { color:var(--warn); }
+  .meta button { display:inline-flex; align-items:center; gap:8px; min-height:44px; padding:0 16px; border:1px solid var(--line-strong); background:var(--surface); border-radius:999px; cursor:pointer; font-size:15px; font-weight:600; }
+  .meta button:hover { border-color:var(--accent); color:var(--accent); }
+
+  /* Fields */
+  .fields { display:grid; gap:4px; }
+  label { font-size:13px; font-weight:600; color:var(--muted); display:block; margin:6px 0 4px; }
+  label:first-child { margin-top:0; }
+  input, select, textarea { font-size:16px; width:100%; min-height:44px; padding:10px 12px; border:1px solid var(--line-strong); border-radius:var(--radius-sm); background:var(--surface); }
+  input::placeholder, textarea::placeholder { color:var(--faint); }
+  select { appearance:none; padding-right:38px; cursor:pointer;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%238a857d' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat:no-repeat; background-position:right 14px center; }
+  input:focus, select:focus, textarea:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
+
+  /* Lines list */
+  .list-head { display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin:0 0 12px; }
+  .list-head h2 { margin:0; font-size:18px; font-weight:700; letter-spacing:-0.01em; }
+  .list-head span { color:var(--faint); font-size:13px; }
+  #lines { display:grid; gap:8px; }
+
+  .line { position:relative; display:grid; grid-template-columns:32px minmax(0,1fr) auto; gap:4px 10px; align-items:start; padding:10px 10px 10px 4px; border:1px solid var(--line); border-radius:var(--radius); background:var(--surface); box-shadow:var(--shadow); transition:border-color .15s, background-color .15s, opacity .15s; }
+  .line:hover { border-color:var(--line-strong); }
+  .line.cut { background:var(--sunken); box-shadow:none; }
+  .line.cut .text { text-decoration:line-through; text-decoration-color:var(--cut); color:var(--cut); }
+  .line.cut .badge { background:var(--cut); }
+  .line.playing { border-color:var(--accent); background:var(--accent-soft); }
+  .line.playing::before { content:""; position:absolute; left:-1px; top:10px; bottom:10px; width:3px; border-radius:0 3px 3px 0; background:var(--accent); }
+  .line.drag-over { box-shadow:0 -3px 0 0 var(--accent); }
+
+  .handle { display:flex; align-items:center; justify-content:center; min-height:44px; cursor:grab; color:var(--faint); user-select:none; }
+  .handle:active { cursor:grabbing; }
+  .line:hover .handle { color:var(--muted); }
+
+  .text { cursor:pointer; overflow-wrap:anywhere; padding:10px 0; font-size:16px; line-height:1.45; border-radius:6px; }
+  .text:hover { color:var(--accent); }
+  .line.cut .text:hover { color:var(--muted); }
+  .badge { display:inline-block; font-size:11px; font-weight:700; letter-spacing:.06em; color:var(--accent-ink); background:var(--accent); border-radius:5px; padding:2px 7px; margin-right:8px; vertical-align:2px; line-height:1.4; }
+  .dur { display:inline-block; margin-left:6px; padding:0 7px; font-size:12px; line-height:20px; color:var(--muted); background:var(--sunken); border:1px solid var(--line); border-radius:999px; font-variant-numeric:tabular-nums; text-decoration:none; vertical-align:1px; }
+
+  .tools { display:flex; gap:2px; }
+  .tools button { display:inline-flex; align-items:center; justify-content:center; min-width:44px; min-height:44px; border:1px solid transparent; background:transparent; border-radius:var(--radius-sm); cursor:pointer; color:var(--muted); }
+  .tools button:hover { background:var(--sunken); color:var(--ink); }
+  .tools button.on { background:var(--accent-soft); color:var(--accent); border-color:transparent; }
+  .line.cut .tools button[data-a="cut"] { color:var(--accent); }
+
+  .note { grid-column:2 / 4; min-height:64px; resize:vertical; font-size:16px; margin:2px 0 4px; background:var(--surface); }
+
+
+
+  /* Transport: this timeline is the edit, not the raw clip */
+  video { cursor:pointer; }
+  .transport { display:grid; grid-template-columns:44px minmax(0,1fr) auto; gap:10px; align-items:center; }
+  .transport button { display:inline-flex; align-items:center; justify-content:center; width:44px; height:44px; border-radius:50%; border:0; background:var(--accent); color:var(--accent-ink); cursor:pointer; }
+  .transport button:hover { filter:brightness(1.07); }
+  #scrub { min-height:44px; padding:0; border:0; background:transparent; accent-color:var(--accent); cursor:pointer; }
+  #scrub:focus { box-shadow:none; }
+  #time { font-size:13px; color:var(--muted); font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .mode { font-size:13px; color:var(--muted); min-height:20px; text-align:center; margin-top:-6px; }
+
+  /* Categories (struck-through removals are colored by why they were cut) */
+  :root { --cat-filler:#c2410c; --cat-repeat:#b45309; --cat-retake:#7c3aed; --cat-content:#2563eb; --cat-false-start:#be185d; --cat-self-correction:#0e7490; --cat-breath:#4d7c0f; --cat-noise:#57534e; --cat-gap:#0f766e; --cat-dropped-speech:#b91c1c; }
+  @media (prefers-color-scheme: dark) { :root { --cat-filler:#fb923c; --cat-repeat:#fbbf24; --cat-retake:#a78bfa; --cat-content:#60a5fa; --cat-false-start:#f472b6; --cat-self-correction:#22d3ee; --cat-breath:#a3e635; --cat-noise:#a8a29e; --cat-gap:#2dd4bf; --cat-dropped-speech:#f87171; } }
+  .legend { display:flex; flex-wrap:wrap; gap:6px 12px; margin:0 0 12px; font-size:12px; color:var(--muted); }
+  .legend i { display:inline-block; width:9px; height:9px; border-radius:50%; background:var(--c); margin-right:5px; vertical-align:0; }
+
+  /* Word-level transcript */
+  .text { cursor:text; }
+  .text:hover { color:inherit; }
+  .w { cursor:pointer; border-radius:4px; padding:1px 1px; margin:0 -1px; transition:background-color .1s; }
+  .w:hover { background:var(--sunken); }
+  .w.low { text-decoration:underline dashed var(--faint); text-underline-offset:4px; }
+  .w.prop { background:color-mix(in srgb, var(--c) 16%, transparent); box-shadow:inset 0 -2px 0 var(--c); }
+  .w.rm { text-decoration:line-through; text-decoration-color:var(--c); color:var(--c); opacity:.85; }
+  .w.cur { outline:2px solid var(--c); outline-offset:1px; }
+  .w.picking { background:var(--accent-soft); }
+  .line.cut .w { color:var(--cut); text-decoration:line-through; text-decoration-color:var(--cut); background:none; box-shadow:none; }
+  .chip { display:inline-block; font-size:11px; font-weight:700; letter-spacing:.04em; border-radius:5px; padding:2px 7px; margin-right:8px; vertical-align:2px; line-height:1.4; color:var(--c); background:color-mix(in srgb, var(--c) 14%, transparent); text-decoration:none; }
+  .use { font-size:12px; font-weight:600; min-height:28px; padding:0 10px; margin-left:6px; border:1px solid var(--line-strong); background:var(--surface); border-radius:999px; cursor:pointer; vertical-align:1px; }
+  .use:hover { border-color:var(--accent); color:var(--accent); }
+
+  /* Review queue: header and paging sit above the card, the card holds one suggestion */
+  .queue { margin:0 0 28px; display:grid; gap:12px; }
+  .q-top { display:flex; align-items:flex-end; justify-content:space-between; gap:12px; }
+  .eyebrow { font-size:11px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--faint); margin-bottom:2px; }
+  .q-top h2 { margin:0; font-size:22px; font-weight:700; letter-spacing:-0.015em; line-height:1.15; }
+  .q-nav { display:flex; align-items:center; gap:8px; }
+  .q-nav span { font-size:13px; color:var(--muted); font-variant-numeric:tabular-nums; margin-right:4px; white-space:nowrap; }
+  .nav { display:inline-flex; align-items:center; justify-content:center; width:44px; height:44px; padding:0; border:1px solid var(--line-strong); background:var(--surface); border-radius:50%; cursor:pointer; color:var(--ink); box-shadow:var(--shadow); }
+  .nav:hover { border-color:var(--accent); color:var(--accent); }
+  .q-card { display:grid; gap:12px; padding:18px; border-color:var(--line-strong); }
+  .q-meta { font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--c, var(--muted)); }
+  .q-meta span { color:var(--faint); font-weight:600; }
+  .q-body { font-size:18px; line-height:1.5; }
+  .q-body .why { color:var(--muted); font-size:14px; margin-top:6px; }
+  .q-body .flag { color:var(--warn); font-size:13px; margin-top:6px; }
+  .q-actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:4px; }
+  .q-actions button, .q-bulk button { display:inline-flex; align-items:center; gap:6px; min-height:44px; padding:0 14px; border:1px solid var(--line-strong); background:var(--surface); border-radius:var(--radius-sm); cursor:pointer; font-size:14px; font-weight:600; }
+  .q-actions button:hover, .q-bulk button:hover { border-color:var(--accent); color:var(--accent); }
+  .q-actions .primary { background:var(--accent); color:var(--accent-ink); border-color:var(--accent); }
+  .q-actions .primary:hover { color:var(--accent-ink); filter:brightness(1.07); }
+  .q-actions .spacer { flex:1 1 0; }
+  .q-bulk { display:flex; flex-wrap:wrap; align-items:center; justify-content:flex-end; gap:8px 12px; }
+  .q-bulk span { font-size:12px; color:var(--warn); }
+  .q-bulk span:empty { display:none; }
+  .q-bulk button { border-style:dashed; color:var(--muted); }
+  .undo { margin-left:8px; min-height:32px; padding:0 12px; border:1px solid var(--line-strong); background:var(--surface); border-radius:999px; cursor:pointer; font-size:14px; font-weight:600; color:var(--ink); }
+  [hidden] { display:none !important; }
+  kbd { font:600 11px/1 ui-monospace, SFMono-Regular, Menlo, monospace; padding:3px 5px; border:1px solid var(--line-strong); border-bottom-width:2px; border-radius:4px; color:var(--muted); background:var(--sunken); }
+  .q-actions .primary kbd { color:var(--accent-ink); background:transparent; border-color:color-mix(in srgb, var(--accent-ink) 45%, transparent); }
+  @media (max-width:480px) { kbd { display:none; } .q-actions button { flex:1 1 40%; justify-content:center; } .q-actions .spacer { display:none; } .q-top h2 { font-size:20px; } }
+
+  @media (max-width:880px) {
+    .wrap { grid-template-columns:minmax(0,1fr); gap:24px; padding-top:16px; }
+    .player { position:static; }
+    video { width:auto; max-width:100%; height:60dvh; max-height:60vh; margin:0 auto; }
+  }
+  @media (max-width:480px) {
+    .top { padding-top:20px; }
+    .line { grid-template-columns:28px minmax(0,1fr); padding-right:8px; }
+    .text { padding-bottom:2px; }
+    .tools { grid-column:2; margin-left:-10px; }
+    .note { grid-column:1 / 3; margin-left:6px; }
+    .list-head span { display:none; }
+  }
+
+  /* Placement: the screen after Send. The frame is the reel; everything beside it stays quiet. */
+  .placement { max-width:1120px; margin:0 auto; padding:28px 16px 48px; }
+  .placement h1 { margin:0; font-size:clamp(22px, 4.5vw, 28px); line-height:1.15; letter-spacing:-0.015em; font-weight:700; }
+  .placement .lede { margin:6px 0 0; color:var(--muted); font-size:15px; max-width:52ch; }
+  .place-grid { display:grid; grid-template-columns:minmax(0,340px) minmax(0,1fr); gap:32px; align-items:start; margin-top:20px; }
+  #place-frame { position:relative; container-type:inline-size; width:min(100%, calc(max(100dvh - 190px, 320px) * 9 / 16)); aspect-ratio:9/16; margin:0 auto; overflow:hidden; background:#000; border-radius:var(--radius); box-shadow:0 8px 24px rgba(30,25,15,.12); }
+  #place-frame video { position:absolute; inset:0; width:100%; height:100%; max-width:none; max-height:none; margin:0; border-radius:0; box-shadow:none; object-fit:cover; cursor:default; }
+  .zone { position:absolute; left:0; right:0; display:flex; align-items:center; justify-content:center; padding:0 8px; text-align:center; color:#fff; font-size:max(10px, 3.3cqw); line-height:1.25; font-weight:600; background:rgba(0,0,0,.45); pointer-events:none; }
+  .zone.maybe { background:rgba(0,0,0,.18); text-shadow:0 1px 3px rgba(0,0,0,.7); align-items:flex-end; padding-bottom:1.6cqw; }
+  .zone.side { left:auto; }
+  #place-cap { position:absolute; z-index:2; display:flex; flex-wrap:wrap; align-content:center; justify-content:center; gap:0 .28em; text-align:center; line-height:1.15; font-family:'ReelCaption', system-ui, sans-serif; pointer-events:none; transition:top .18s ease, left .18s ease, width .18s ease, height .18s ease; }
+  .place-side { display:grid; gap:16px; max-width:460px; }
+  #place-spots { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:8px; }
+  .spot { display:flex; align-items:center; gap:12px; min-height:60px; padding:8px 14px; text-align:left; font-size:16px; font-weight:600; color:var(--ink); background:var(--surface); border:1px solid var(--line-strong); border-radius:var(--radius-sm); cursor:pointer; box-shadow:var(--shadow); }
+  .spot svg { color:var(--muted); }
+  .spot:hover:not(:disabled) { border-color:var(--accent); }
+  .spot[aria-pressed="true"] { border-color:var(--accent); background:var(--accent-soft); box-shadow:inset 0 0 0 1px var(--accent); }
+  .spot[aria-pressed="true"] svg { color:var(--accent); }
+  .spot:disabled { cursor:default; color:var(--faint); background:var(--sunken); border-style:dashed; box-shadow:none; }
+  .spot:disabled svg { color:var(--faint); }
+  .place-note { margin:0; min-height:24px; font-size:15px; color:var(--ink); }
+  .place-why { margin:0; font-size:14px; color:var(--muted); }
+  .place-why:empty, .place-note:empty { display:none; }
+  label.place-default { display:flex; align-items:center; gap:10px; min-height:44px; margin:0; font-size:16px; font-weight:500; color:var(--ink); cursor:pointer; }
+  .place-default input { flex:none; width:20px; height:20px; min-height:0; padding:0; accent-color:var(--accent); }
+  .place-actions { display:flex; flex-wrap:wrap; align-items:center; gap:10px 16px; }
+  .place-look { border:1px solid var(--line-strong); border-radius:var(--radius-sm); background:var(--surface); box-shadow:var(--shadow); }
+  .place-look summary { display:flex; align-items:center; gap:12px; min-height:64px; padding:10px 12px; cursor:pointer; list-style:none; border-radius:var(--radius-sm); }
+  .place-look summary::-webkit-details-marker { display:none; }
+  .place-look summary:hover .look-toggle { border-color:var(--accent); color:var(--accent); }
+  .look-ico { flex:none; display:grid; place-items:center; width:44px; height:44px; border-radius:10px; background:var(--accent-soft); color:var(--accent); }
+  .look-text { flex:1 1 auto; min-width:0; display:grid; line-height:1.3; }
+  .look-text strong { font-size:16px; font-weight:700; }
+  .look-text small { font-size:13px; color:var(--muted); }
+  /* A worded button, not an arrow: it says what tapping does. */
+  .look-toggle { flex:none; display:inline-flex; align-items:center; min-height:36px; padding:0 14px; border:1px solid var(--line-strong); border-radius:999px; font-size:14px; font-weight:600; }
+  .look-toggle::after { content:"Edit"; }
+  .place-look[open] .look-toggle { background:var(--accent); border-color:var(--accent); color:var(--accent-ink); }
+  .place-look[open] summary:hover .look-toggle { color:var(--accent-ink); }
+  .place-look[open] .look-toggle::after { content:"Done"; }
+  .place-look[open] summary { border-bottom:1px solid var(--line); border-radius:var(--radius-sm) var(--radius-sm) 0 0; }
+  .place-look-body { display:grid; gap:14px; padding:14px 14px 16px; }
+  .place-look-body > p { margin:0; font-size:14px; color:var(--muted); }
+  .place-look-body > p strong { color:var(--ink); }
+  .place-stage { position:sticky; top:16px; }
+  .place-chat { justify-self:start; min-height:44px; padding:0 2px; border:0; background:none; color:var(--accent); font-size:15px; font-weight:600; text-decoration:underline; text-decoration-thickness:1.5px; text-underline-offset:4px; cursor:pointer; }
+  .place-chat:hover { text-decoration-thickness:2.5px; }
+  .place-chat:disabled { opacity:.5; cursor:default; }
+  /* color-scheme:light matches the preview page's own scheme; without it a dark review page makes the browser paint the iframe an opaque white. */
+  /* The hook preview is a real 1080x1920 page, scaled down to the frame. It sits under the caption (z-index 2) and never takes a tap. */
+  #hook-frame { position:absolute; left:0; top:0; width:1080px; height:1920px; max-width:none; border:0; background:transparent; transform-origin:0 0; pointer-events:none; z-index:1; color-scheme:light; }
+  .place-done { margin:20px 0 0; padding:18px; font-size:18px; font-weight:600; color:var(--accent); }
+  @media (max-width:880px) {
+    .place-grid { grid-template-columns:minmax(0,1fr); gap:20px; }
+    #place-frame { width:min(100%, calc(62dvh * 9 / 16)); }
+    .place-stage { position:static; }
+    /* With the look open the options run long: keep a smaller frame in view above them, on a solid band so nothing shows through. */
+    .placement:has(.place-look[open]) .place-stage { position:sticky; top:0; z-index:3; margin:0 -16px; padding:8px 16px 10px; background:var(--bg); border-bottom:1px solid var(--line); }
+    .placement:has(.place-look[open]) #place-frame { width:min(100%, calc(38dvh * 9 / 16)); }
+    .place-side { max-width:none; }
+  }
+  @media (max-width:480px) { .placement { padding-top:20px; } .spot { padding:8px 10px; gap:10px; } }
+  /* Hook card screen: the step after the caption spot. Same stage-left, controls-right pattern as the caption screen.
+     One loud thing on this screen: the card on the stage, which you can pick up and move. Everything else stays quiet. */
+  .hook-screen .place-grid { grid-template-columns:minmax(0,380px) minmax(0,1fr); }
+  .hook-screen .place-side { gap:22px; max-width:600px; }
+
+  /* The stage: the reel's frame, the live card on top, and a grab layer over the card. */
+  #hook-stage { position:relative; container-type:inline-size; width:min(100%, calc(max(100dvh - 170px, 320px) * 9 / 16)); aspect-ratio:9/16; margin:0 auto; overflow:hidden; background:#000; border-radius:var(--radius); box-shadow:0 8px 24px rgba(30,25,15,.12); }
+  #hook-stage:focus-visible { outline:3px solid var(--accent); outline-offset:3px; }
+  #hook-stage video { position:absolute; inset:0; width:100%; height:100%; max-width:none; max-height:none; margin:0; border-radius:0; box-shadow:none; object-fit:cover; cursor:default; }
+  /* Instagram's covered bands: faint while you look, labelled while you drag, so it is clear why the card stops. */
+  .hook-zone { z-index:3; background:rgba(0,0,0,.22); color:transparent; transition:background-color .15s, color .15s; }
+  .hook-zone[data-zone="top"] { top:0; height:13.02%; }       /* ZONES.top 250 / 1920 */
+  .hook-zone[data-zone="bottom"] { top:80%; bottom:0; }        /* ZONES.always 1536 / 1920 */
+  #hook-stage.dragging .hook-zone { background:rgba(0,0,0,.5); color:#fff; }
+  #hook-cap { position:absolute; z-index:2; display:flex; flex-wrap:wrap; align-content:center; justify-content:center; gap:0 .28em; text-align:center; line-height:1.15; font-family:'ReelCaption', system-ui, sans-serif; pointer-events:none; }
+  /* The grab layer. JS sets top and height (in % of the stage) to the card's box. */
+  #hook-drag { position:absolute; left:0; right:0; z-index:4; cursor:grab; touch-action:none; -webkit-user-select:none; user-select:none; }
+  #hook-drag::before { content:""; position:absolute; inset:-1.4cqw 4cqw; border:1.5px dashed rgba(255,255,255,.7); border-radius:2.4cqw; box-shadow:0 0 0 1px rgba(0,0,0,.18); transition:border-color .15s, inset .15s; }
+  #hook-drag:hover::before, #hook-stage:focus-visible #hook-drag::before { border-color:#fff; border-style:solid; }
+  #hook-stage.dragging #hook-drag { cursor:grabbing; }
+  #hook-stage.dragging #hook-drag::before { inset:-2.2cqw 3cqw; border:2px solid #fff; box-shadow:0 0 0 1px rgba(0,0,0,.25), 0 1.5cqw 5cqw rgba(0,0,0,.35); }
+  .hook-grip { position:absolute; left:50%; top:-1.4cqw; transform:translate(-50%, calc(-100% - 4px)); display:inline-flex; align-items:center; gap:6px; min-height:30px; padding:0 12px 0 9px; border-radius:999px; background:#fff; color:#1f1e1c; font-size:13px; font-weight:700; line-height:1; white-space:nowrap; box-shadow:0 2px 8px rgba(0,0,0,.35); pointer-events:none; }
+  #hook-stage.dragging .hook-grip { background:var(--accent); color:var(--accent-ink); }
+  .hook-stage-chip { display:none; position:absolute; z-index:4; left:50%; top:50%; transform:translate(-50%,-50%); padding:8px 14px; border-radius:999px; background:rgba(0,0,0,.62); color:#fff; font-size:14px; font-weight:700; white-space:nowrap; pointer-events:none; }
+  #hook-stage.is-none .hook-stage-chip { display:block; }
+  .hook-stage-note { margin:10px auto 0; max-width:36ch; min-height:20px; text-align:center; font-size:13px; line-height:1.4; color:var(--muted); }
+  .hook-stage-note.is-fixed { color:var(--ink); font-weight:600; }
+
+  /* Side blocks */
+  .hook-block { display:grid; gap:10px; min-width:0; }
+  .hook-block-h { margin:0; font-size:16px; font-weight:700; letter-spacing:-0.01em; }
+  #hook-lines { display:grid; gap:8px; }
+  #hook-lines:empty { display:none; }
+  .hook-line { display:flex; align-items:center; gap:12px; min-height:48px; padding:10px 14px; border:1px solid var(--line-strong); border-radius:var(--radius-sm); background:var(--surface); color:var(--ink); font-size:16px; line-height:1.35; text-align:left; cursor:pointer; white-space:pre-line; overflow-wrap:anywhere; box-shadow:var(--shadow); }
+  .hook-line::before { content:""; flex:none; width:18px; height:18px; border-radius:50%; border:1.5px solid var(--line-strong); background:var(--surface); }
+  .hook-line:hover { border-color:var(--accent); }
+  .hook-line[aria-checked="true"] { border-color:var(--accent); background:var(--accent-soft); box-shadow:inset 0 0 0 1px var(--accent); }
+  .hook-line[aria-checked="true"]::before { border-color:var(--accent); background:var(--accent); box-shadow:inset 0 0 0 3px var(--surface); }
+  #hook-own { min-height:64px; resize:vertical; }
+
+  /* The looks: a picture per look, name underneath. "No hook card" is the first tile, so skipping is a choice you can see. */
+  #hook-grid { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:10px; }
+  .hook-look { position:relative; display:grid; align-content:start; gap:6px; min-width:0; padding:6px 6px 9px; border:1px solid var(--line-strong); border-radius:var(--radius-sm); background:var(--surface); color:var(--ink); text-align:left; cursor:pointer; box-shadow:var(--shadow); }
+  .hook-look:hover:not(:disabled) { border-color:var(--accent); }
+  .hook-pic { position:relative; display:block; container-type:inline-size; aspect-ratio:9/16; overflow:hidden; border-radius:6px; background:#111; }
+  .hook-pic img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; }
+  .hook-look-name { padding:0 3px; font-size:14px; font-weight:650; line-height:1.25; overflow-wrap:anywhere; }
+  .hook-look small { padding:0 3px; margin-top:-3px; font-size:12px; line-height:1.3; color:var(--muted); }
+  .hook-tick { display:none; position:absolute; top:6px; right:6px; z-index:2; width:24px; height:24px; place-items:center; border-radius:50%; background:var(--accent); color:var(--accent-ink); box-shadow:0 0 0 2px var(--surface); }
+  .hook-look[aria-pressed="true"] { border-color:var(--accent); background:var(--accent-soft); box-shadow:inset 0 0 0 1px var(--accent); }
+  .hook-look[aria-pressed="true"] .hook-look-name { color:var(--accent); }
+  .hook-look[aria-pressed="true"] .hook-tick { display:grid; }
+  /* First visit: "No hook card" is chosen and the first look is pointed at, not chosen. */
+  .hook-look.suggest:not([aria-pressed="true"]) { border-style:dashed; border-color:var(--accent); }
+  /* Only the behind looks, and only when the cutout tool can't run. */
+  .hook-look:disabled { cursor:not-allowed; background:var(--sunken); border-style:dashed; box-shadow:none; }
+  .hook-look:disabled .hook-pic { opacity:.4; filter:grayscale(1); }
+  .hook-look:disabled .hook-look-name { color:var(--muted); }
+  .hook-look:disabled .hook-why { color:var(--warn); }
+  .hook-none .hook-pic { display:grid; place-items:center; align-content:center; gap:8px; background:var(--sunken); border:1.5px dashed var(--line-strong); color:var(--muted); }
+  .hook-none[aria-pressed="true"] .hook-pic { background:var(--surface); border-color:var(--accent); color:var(--accent); }
+
+  /* Note under the looks: plain facts, then any warnings as their own lines. */
+  .hook-note { display:grid; gap:8px; margin:0; font-size:15px; color:var(--ink); }
+  .hook-note:empty { display:none; }
+  .hook-warn { display:flex; align-items:flex-start; gap:8px; padding:8px 12px; border-radius:var(--radius-sm); background:var(--warn-soft); color:var(--warn); font-size:14px; font-weight:600; line-height:1.4; }
+  .hook-warn::before { content:"!"; flex:none; display:grid; place-items:center; width:18px; height:18px; margin-top:1px; border:1.5px solid currentColor; border-radius:50%; font-size:11px; font-weight:800; line-height:1; }
+  #hook-replay { margin-top:-12px; }
+
+  /* Actions: render and skip are the same size and weight. Whichever matches the current choice is the filled one. */
+  .hook-actions { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:10px; }
+  .hook-actions .send { width:100%; min-height:52px; padding:0 16px; text-align:center; line-height:1.2; }
+  .send.send-alt { background:var(--surface); color:var(--ink); box-shadow:inset 0 0 0 2px var(--ink); }
+  .send.send-alt:hover { filter:none; background:var(--sunken); }
+  .hook-screen[data-choice="none"] #hook-skip, .hook-screen[data-state="short"] #hook-skip { background:var(--accent); color:var(--accent-ink); box-shadow:0 2px 8px rgba(47,111,94,.25); }
+  .hook-screen[data-choice="none"] #hook-skip:hover, .hook-screen[data-state="short"] #hook-skip:hover { background:var(--accent); filter:brightness(1.07); }
+  .hook-screen[data-choice="none"] #hook-go { background:var(--surface); color:var(--muted); box-shadow:inset 0 0 0 2px var(--line-strong); opacity:1; }
+  .hook-sub { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:4px 16px; margin-top:-6px; }
+  .hook-back { display:inline-flex; align-items:center; gap:6px; min-height:44px; padding:0 16px 0 12px; border:1px solid var(--line-strong); border-radius:999px; background:var(--surface); color:var(--ink); font-size:15px; font-weight:600; cursor:pointer; }
+  .hook-back:hover { border-color:var(--accent); color:var(--accent); }
+
+  /* Reel too short: one line, skip, Back. */
+  .hook-short { display:none; margin:0; padding:14px 16px; border:1px solid var(--line-strong); border-radius:var(--radius-sm); background:var(--surface); font-size:16px; font-weight:600; }
+  .hook-screen[data-state="short"] .hook-short { display:block; }
+  .hook-screen[data-state="short"] :is(#hook-line-block, #hook-look-block, #hook-note, #hook-replay, #hook-go, #hook-chat, .hook-stage-note, .lede) { display:none; }
+  .hook-screen[data-state="short"] .hook-actions { grid-template-columns:minmax(0,1fr); }
+
+  @media (max-width:1040px) { #hook-grid { grid-template-columns:repeat(3, minmax(0,1fr)); } }
+  @media (max-width:880px) {
+    .hook-screen .place-grid { grid-template-columns:minmax(0,1fr); }
+    .hook-screen .place-side { max-width:none; }
+    /* The controls run long on a phone: the stage stays in view above them, on a solid band. */
+    .hook-screen .place-stage { position:sticky; top:0; z-index:5; margin:0 -16px; padding:8px 16px 6px; background:var(--bg); border-bottom:1px solid var(--line); }
+    #hook-stage { width:min(100%, calc(40dvh * 9 / 16)); }
+    .hook-stage-note { margin-top:6px; }
+    #hook-grid { grid-template-columns:repeat(4, minmax(0,1fr)); }
+  }
+  @media (max-width:640px) { #hook-grid { grid-template-columns:repeat(3, minmax(0,1fr)); } }
+  @media (max-width:560px) { .hook-actions { grid-template-columns:minmax(0,1fr); } }
+  @media (max-width:480px) {
+    #hook-grid { grid-template-columns:repeat(2, minmax(0,1fr)); gap:8px; }
+    .hook-look-name { font-size:15px; }
+    .hook-sub { justify-content:flex-start; }
+  }
+
+  /* Send bar */
+  .bar { position:fixed; left:0; right:0; bottom:0; z-index:10; background:color-mix(in srgb, var(--surface) 92%, transparent); -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); border-top:1px solid var(--line); padding:12px 16px calc(12px + env(safe-area-inset-bottom)); }
+  .bar-inner { max-width:1120px; margin:0 auto; display:flex; flex-wrap:wrap; gap:10px 16px; align-items:center; justify-content:flex-end; }
+  .send { display:inline-flex; align-items:center; justify-content:center; gap:10px; min-height:48px; padding:0 24px; font-size:17px; font-weight:700; color:var(--accent-ink); background:var(--accent); border:0; border-radius:999px; cursor:pointer; box-shadow:0 2px 8px rgba(47,111,94,.25); transition:transform .1s, filter .15s; }
+  .send:hover { filter:brightness(1.07); }
+  .send:active { transform:translateY(1px); }
+  .send:disabled { opacity:.5; cursor:default; filter:none; transform:none; box-shadow:none; }
+  .msg { flex:1 1 200px; color:var(--warn); font-size:15px; }
+  .msg:empty { display:none; }
+  .msg.done { color:var(--accent); font-weight:600; }
+  @media (max-width:480px) { .send { flex:1 1 100%; } }
+  @media (prefers-reduced-motion: reduce) { * { transition:none !important; } }
+</style>
+</head>
+<body>
+<header class="top">
+  <h1>Review your reel</h1>
+  <p>Read it like a transcript. Click a word to cut or restore it, work through the queue, drag lines to reorder, then send.</p>
+</header>
+<main class="wrap">
+  <section class="player" aria-label="Preview">
+    <video id="video" playsinline title="Click to play or pause"></video>
+    <div class="transport">
+      <button id="pp" aria-label="Play your edit"></button>
+      <input id="scrub" type="range" min="0" max="1000" step="1" value="0" aria-label="Position in your edit">
+      <span id="time">0:00 / 0:00</span>
+    </div>
+    <div id="mode" class="mode" role="status"></div>
+    <div class="card meta"><span>Length<strong id="len">0:00</strong> of ~<span id="target">0:40</span></span><button id="playall"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 1.8v10.4a.6.6 0 0 0 .9.5l8.4-5.2a.6.6 0 0 0 0-1L3.9 1.3a.6.6 0 0 0-.9.5z" fill="currentColor"/></svg>Play all</button></div>
+  </section>
+  <section aria-labelledby="lines-h">
+    <section class="queue" id="queue" aria-labelledby="queue-h" hidden>
+      <div class="q-top">
+        <div>
+          <div class="eyebrow">Review queue</div>
+          <h2 id="queue-h">Suggested cuts</h2>
+        </div>
+        <div class="q-nav">
+          <span id="q-count"></span>
+          <button id="q-prev" class="nav" aria-label="Previous suggestion (K)" title="Previous (K)"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3L5 8l5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          <button id="q-next" class="nav" aria-label="Next suggestion (J)" title="Next (J)"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        </div>
+      </div>
+      <div class="card q-card">
+        <div class="q-meta" id="q-stage"></div>
+        <div class="q-body" id="q-body"></div>
+        <div class="q-actions">
+          <button id="q-play" title="Plays 2 seconds before and after, with these words removed">Hear it cut <kbd>P</kbd></button>
+          <button id="q-orig" title="Plays the same moment exactly as you recorded it">Hear original <kbd>O</kbd></button>
+          <span class="spacer"></span>
+          <button id="q-reject">Keep it <kbd>R</kbd></button>
+          <button id="q-accept" class="primary">Cut it <kbd>A</kbd></button>
+        </div>
+      </div>
+      <div class="q-bulk"><span id="q-warn"></span><button id="q-all"></button></div>
+    </section>
+    <div class="list-head"><h2 id="lines-h">Your lines</h2><span>Click a word to cut or restore it. Double-click to fix a misheard word.</span></div>
+    <div class="legend" id="legend"></div>
+    <div id="lines"></div>
+  </section>
+</main>
+<section id="placement" class="placement" aria-labelledby="place-h" hidden>
+  <div class="eyebrow" id="place-step">Step 1 of 2</div>
+  <h1 id="place-h">Where should the captions sit?</h1>
+  <p class="lede">Your cut is saved. Tap a spot to see it on this reel.</p>
+  <div class="place-grid" id="place-body">
+    <div class="place-stage"><div id="place-frame">
+      <video id="place-video" muted playsinline preload="auto" aria-label="A frame from this reel"></video>
+      <div class="zone" id="zone-top">Instagram covers this</div>
+      <div class="zone maybe" id="zone-maybe">A long post caption can cover this</div>
+      <div class="zone" id="zone-bottom">Instagram covers this</div>
+      <div class="zone side" id="zone-side" aria-hidden="true"></div>
+      <div id="place-cap" aria-hidden="true"></div>
+    </div></div>
+    <div class="place-side">
+      <div id="place-spots" role="group" aria-label="Caption spot"></div>
+      <p id="place-note" class="place-note" role="status"></p>
+      <p id="place-why" class="place-why"></p>
+      <details class="place-look" id="place-look">
+        <summary>
+          <span class="look-ico" aria-hidden="true"><svg width="26" height="22" viewBox="0 0 26 22"><path d="M2.5 18 8 4h1.6L15 18M4.6 13.2h8.2" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/><circle cx="20.5" cy="14" r="3.6" fill="none" stroke="currentColor" stroke-width="2.1"/><path d="M24.1 10.2V18" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"/></svg></span>
+          <span class="look-text"><strong>Change the look</strong><small>Font, one word or a few, colors</small></span>
+          <span class="look-toggle" aria-hidden="true"></span>
+        </summary>
+        <div class="place-look-body">
+          <p>Changes here update your <strong id="look-style"></strong> style, for this reel and the next ones.</p>
+          <div class="look" id="look-controls"></div>
+        </div>
+      </details>
+      <label class="place-default"><input type="checkbox" id="place-default"> Make this my default</label>
+      <div class="place-actions"><button id="place-next" class="send">Next: hook card<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9.5M8.5 3.5 13 8l-4.5 4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button><span id="place-msg" class="msg" role="alert"></span></div>
+      <button type="button" id="place-chat" class="place-chat">I want to chat about more edits first</button>
+    </div>
+  </div>
+</section>
+<section id="hook-screen" class="placement hook-screen" aria-labelledby="hook-h" data-choice="none" data-state="" hidden>
+  <div class="eyebrow">Step 2 of 2</div>
+  <h1 id="hook-h">Add a hook card?</h1>
+  <p class="lede">A line over the first few seconds that gives people a reason to stay. Pick a look and drag it where you want it, or skip it.</p>
+  <div class="place-grid">
+    <div class="place-stage">
+      <div id="hook-stage" tabindex="-1" role="slider" aria-orientation="vertical" aria-label="Hook card position" aria-disabled="true"
+           aria-valuemin="0" aria-valuemax="0" aria-valuenow="0" aria-valuetext="Where the look puts it" aria-describedby="hook-stage-note">
+        <video id="hook-video" muted playsinline preload="auto" aria-hidden="true"></video>
+        <div class="zone hook-zone" data-zone="top">Instagram covers this</div>
+        <div class="zone hook-zone" data-zone="bottom">Instagram covers this</div>
+        <iframe id="hook-frame" title="Hook card preview" tabindex="-1" aria-hidden="true" hidden></iframe>
+        <div id="hook-cap" aria-hidden="true"></div>
+        <div id="hook-drag" aria-hidden="true" hidden>
+          <span class="hook-grip"><svg width="10" height="14" viewBox="0 0 10 14"><path d="M5 1v12M1.5 4.5 5 1l3.5 3.5M1.5 9.5 5 13l3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>Drag</span>
+        </div>
+        <div class="hook-stage-chip" aria-hidden="true">No hook card</div>
+      </div>
+      <p id="hook-stage-note" class="hook-stage-note"></p>
+    </div>
+    <div class="place-side">
+      <p id="hook-short" class="hook-short">This reel is too short for a hook card, so it renders without one.</p>
+      <section class="hook-block" id="hook-line-block" aria-labelledby="hook-line-h">
+        <h2 class="hook-block-h" id="hook-line-h">The line</h2>
+        <div id="hook-lines" role="radiogroup" aria-labelledby="hook-line-h"></div>
+        <textarea id="hook-own" rows="2" maxlength="90" placeholder="Or write your own. Enter starts a new line." aria-label="Your own hook line"></textarea>
+      </section>
+      <section class="hook-block" id="hook-look-block" aria-labelledby="hook-look-h">
+        <h2 class="hook-block-h" id="hook-look-h">The look</h2>
+        <div id="hook-grid" role="group" aria-labelledby="hook-look-h">
+          <button type="button" id="hook-none" class="hook-look hook-none" aria-pressed="true">
+            <span class="hook-pic"><svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><rect x="5" y="9" width="24" height="16" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M6 28 28 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span class="hook-tick" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M3 7.4 5.8 10 11 4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></span>
+            <span class="hook-look-name">No hook card</span><small>Captions only</small>
+          </button>
+        </div>
+      </section>
+      <p id="hook-note" class="hook-note" role="status"></p>
+      <button type="button" id="hook-replay" class="place-chat">Play again</button>
+      <div class="hook-actions">
+        <button type="button" id="hook-go" class="send">Render with this hook</button>
+        <button type="button" id="hook-skip" class="send send-alt">No hook card, render</button>
+      </div>
+      <span id="hook-msg" class="msg" role="alert"></span>
+      <div class="hook-sub">
+        <button type="button" id="hook-back" class="hook-back"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M13 8H3.5M7.5 3.5 3 8l4.5 4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Back</button>
+        <button type="button" id="hook-chat" class="place-chat">I want to chat about more edits first</button>
+      </div>
+    </div>
+  </div>
+</section>
+<div class="bar"><div class="bar-inner"><span id="msg" class="msg" role="status"></span><button id="send" class="send">Send to Claude</button></div></div>
+<script>
+let state, cl, qi = 0, playing = null, raf = 0, pick = null, acutTimer = 0, pos = 0, starts = [];
+const $ = (s) => document.querySelector(s);
+const video = $("#video");
+const fmt = (s) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, "0")}`;
+const dur = (l) => l.out - l.in;
+const STAGES = { 4: "Retakes", 5: "Structure", 6: "Content cuts", 7: "Fillers and repeats", 8: "Pauses", 9: "Cut points", 10: "Visual jumps" };
+const LABEL = { content: "Content cut", filler: "Filler word", repeat: "Repeated word", retake: "Retake", "false-start": "False start", "self-correction": "Self-correction", breath: "Breath", noise: "Noise", gap: "Pause", "dropped-speech": "Missing captions" };
+const CATS = ["filler", "repeat", "retake", "content", "false-start", "self-correction", "dropped-speech"];
+const ICON = {
+  grip: '<svg width="12" height="18" viewBox="0 0 12 18" aria-hidden="true"><g fill="currentColor"><circle cx="3" cy="3" r="1.5"/><circle cx="9" cy="3" r="1.5"/><circle cx="3" cy="9" r="1.5"/><circle cx="9" cy="9" r="1.5"/><circle cx="3" cy="15" r="1.5"/><circle cx="9" cy="15" r="1.5"/></g></svg>',
+  pause: '<svg width="16" height="16" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 1.5h3v11H3zM8 1.5h3v11H8z" fill="currentColor"/></svg>',
+  play: '<svg width="16" height="16" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 1.8v10.4a.6.6 0 0 0 .9.5l8.4-5.2a.6.6 0 0 0 0-1L3.9 1.3a.6.6 0 0 0-.9.5z" fill="currentColor"/></svg>',
+  note: '<svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M3.5 16.5l.7-3.3 9.2-9.2a1.7 1.7 0 0 1 2.4 0l.2.2a1.7 1.7 0 0 1 0 2.4l-9.2 9.2zM12 5.4l2.6 2.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  cut: '<svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M3.5 5.5h13M8 5.5V4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v1.5M5 5.5l.8 10.6a1 1 0 0 0 1 .9h6.4a1 1 0 0 0 1-.9L15 5.5M8.5 8.5v5.5M11.5 8.5v5.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  restore: '<svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 4.5v4h4M4.4 8.4A6.2 6.2 0 1 1 4.8 13" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+};
+
+async function load() {
+  const res = await fetch("/api/state");
+  state = await res.json();
+  if (!res.ok) { $("#msg").textContent = `Couldn't load this reel: ${(state.errors || []).join(" ")} Tell Claude.`; $("#send").disabled = true; return; }
+  cl = state.cutlist;
+  cl.decisions ||= []; cl.take_groups ||= []; cl.protected_pauses ||= [];
+  $("#target").textContent = fmt(cl.target_seconds);
+  if (state.stage === "placement") return showPlacement();   // the cut was already sent: reopening the tab picks up at the caption spot
+  $("#legend").innerHTML = CATS.map((c) => `<span><i style="--c:var(--cat-${c})"></i>${c === "dropped-speech" ? "missing captions" : c.replace("-", " ")}</span>`).join("") + '<span><span class="w low">dashed</span> = not sure I heard it right</span>';
+  render();
+  indexAcut(); cue(0); setIcon();
+  if (state.restored) { $("#msg").className = "msg"; $("#msg").textContent = "Picked up the choices you made last time."; }
+}
+
+// ---- decisions
+const lineOf = (id) => cl.lines.find((l) => l.id === id);
+const onCutLine = (d) => d.category === "dropped-speech" && lineOf(d.line_id)?.keep === false; // a Missing captions item on a cut line holds nothing up (same rule as unresolved() in cutlist.js)
+const needsReview = (d) => !onCutLine(d) && (d.status === "proposed" || (d.status === "accepted" && d.flags?.length && d.reviewed === false));
+const bulkReady = (d) => !d.flags?.length; // Accept all takes only what needs no listen
+function queue() {
+  const order = new Map(cl.lines.map((l, i) => [l.id, i]));
+  return cl.decisions.filter(needsReview).sort((a, b) => a.stage - b.stage || order.get(a.line_id) - order.get(b.line_id) || a.start_ms - b.start_ms);
+}
+function decisionByWord(line) {
+  const rank = { accepted: 3, proposed: 2, rejected: 1 }, map = new Map();
+  for (const d of cl.decisions) if (d.line_id === line.id) for (const id of d.word_ids) if (!map.has(id) || rank[d.status] > rank[map.get(id).status]) map.set(id, d);
+  return map;
+}
+function resolve(d, status) { d.status = status; d.resolved_by = "user"; if (d.flags?.length) d.reviewed = true; }
+function nextId() { return "d_" + String(Math.max(0, ...cl.decisions.map((d) => Number(String(d.id).replace(/\D/g, "")) || 0)) + 1).padStart(4, "0"); }
+
+// UX-1: click a word (or drag across a few) to cut or restore it.
+function toggleWords(line, words) {
+  const by = decisionByWord(line);
+  const removed = (w) => by.get(w.id)?.status === "accepted";
+  if (words.every(removed)) { new Set(words.map((w) => by.get(w.id))).forEach((d) => resolve(d, "rejected")); return; }
+  const fresh = [];
+  for (const w of words) { const d = by.get(w.id); if (d) resolve(d, "accepted"); else fresh.push(w); }
+  if (fresh.length) cl.decisions.push({ id: nextId(), stage: 6, category: "content", source: line.source, line_id: line.id, word_ids: fresh.map((w) => w.id),
+    start_ms: Math.round(fresh[0].s * 1000), end_ms: Math.round(fresh.at(-1).e * 1000), reason: "cut in review", confidence: 1, status: "accepted", auto: false, created_by: "user", resolved_by: "user", flags: [] });
+}
+
+// ---- render
+function render() {
+  const q = queue(); qi = Math.min(qi, Math.max(0, q.length - 1));
+  const current = q[qi];
+  const groupOf = new Map(); cl.take_groups.forEach((g) => g.line_ids.forEach((id, k) => groupOf.set(id, { g, k })));
+  const box = $("#lines"); box.innerHTML = "";
+  cl.lines.forEach((l, i) => {
+    const el = document.createElement("div");
+    el.className = `line${l.keep ? "" : " cut"}`; el.dataset.i = i; el.dataset.id = l.id;
+    const by = decisionByWord(l);
+    const words = l.words.map((w, wi) => {
+      const d = by.get(w.id);
+      const cls = ["w"]; let style = "", tip = "";
+      if (w.conf !== undefined && w.conf < state.low_confidence) { cls.push("low"); tip = "Not sure I heard this right. Double-click to fix it."; }
+      if (d && d.status !== "rejected") { cls.push(d.status === "accepted" ? "rm" : "prop"); style = `--c:var(--cat-${d.category})`; tip = `${d.category}: ${d.reason}`; if (d === current) cls.push("cur"); }
+      return `<span class="${cls.join(" ")}" data-wi="${wi}" style="${style}" title="${escapeHtml(tip)}">${escapeHtml(w.w)}</span>`;
+    }).join(" ");
+    const take = groupOf.get(l.id);
+    const takeChip = take ? `<span class="chip" style="--c:var(--cat-retake)" title="Same line, recorded ${take.g.line_ids.length} times">TAKE ${take.k + 1}/${take.g.line_ids.length}</span>` : "";
+    const cutChip = !l.keep && l.cut ? `<span class="chip" style="--c:var(--cat-${l.cut.category})" title="${escapeHtml(l.cut.reason || "")}">${l.cut.category.toUpperCase()}</span>` : "";
+    const useBtn = take && take.g.selected !== l.id ? `<button class="use" data-a="take">Use this take</button>` : "";
+    const cutTip = l.keep ? "Cut this line" : "Restore this line";
+    el.innerHTML = `<span class="handle" draggable="true" title="Drag to reorder">${ICON.grip}</span>
+      <div class="text">${i === 0 ? '<span class="badge">HOOK</span>' : ""}${takeChip}${cutChip}${words} <span class="dur">${fmt(dur(l))}</span>${useBtn}</div>
+      <div class="tools">
+        <button data-a="play" title="Play this line" aria-label="Play this line">${ICON.play}</button>
+        <button class="${l.note ? "on" : ""}" data-a="note" title="Add a note" aria-label="Add a note">${ICON.note}</button>
+        <button data-a="cut" title="${cutTip}" aria-label="${cutTip}">${l.keep ? ICON.cut : ICON.restore}</button>
+      </div>
+      ${l._noteOpen || l.note ? `<textarea class="note" rows="2" placeholder="Note for Claude">${escapeHtml(l.note)}</textarea>` : ""}`;
+    el.querySelectorAll("button").forEach((b) => (b.onclick = () => act(l, b.dataset.a)));
+    const ta = el.querySelector("textarea"); if (ta) ta.oninput = () => { l.note = ta.value; saveDraft(); };
+    el.querySelectorAll(".w").forEach((span) => {
+      const wi = +span.dataset.wi;
+      span.onmousedown = (e) => { if (!l.keep) return; e.preventDefault(); pick = { line: l, from: wi, to: wi }; };
+      span.onmouseenter = () => { if (pick && pick.line === l) { pick.to = wi; el.querySelectorAll(".w").forEach((x) => x.classList.toggle("picking", inPick(+x.dataset.wi))); } };
+      span.ondblclick = () => { const fixed = prompt("What was actually said?", l.words[wi].w); if (fixed && fixed.trim()) { l.words[wi].w = fixed.trim(); l.text = l.words.map((w) => w.w).join(" "); changed(); } }; // PRF-3: text only, timing untouched
+    });
+    const handle = el.querySelector(".handle");
+    handle.ondragstart = (e) => { e.dataTransfer.setData("text/plain", i); e.dataTransfer.setDragImage(el, 10, 10); };
+    el.ondragover = (e) => { e.preventDefault(); el.classList.add("drag-over"); };
+    el.ondragleave = () => el.classList.remove("drag-over");
+    el.ondrop = (e) => { e.preventDefault(); const from = +e.dataTransfer.getData("text/plain"); if (Number.isNaN(from)) return; const [m] = cl.lines.splice(from, 1); cl.lines.splice(i, 0, m); changed(); };
+    box.appendChild(el);
+  });
+  cl.lines.forEach((l, i) => (l.hook = i === 0));
+  renderQueue(q);
+  const total = state.acut?.seconds ?? 0;
+  $("#len").textContent = fmt(total); $("#len").className = total > cl.target_seconds * 1.15 ? "over" : "";
+  $("#send").disabled = q.length > 0 || $("#send").dataset.sent === "1";
+  if ($("#send").dataset.sent !== "1" && !document.querySelector("#undo")) { $("#msg").className = "msg"; $("#msg").textContent = q.length ? `${q.length} to resolve in the queue before you can send.` : ""; }
+  if (playing) markPlaying(playing.ranges[playing.i]?.lineId);
+}
+const inPick = (wi) => pick && wi >= Math.min(pick.from, pick.to) && wi <= Math.max(pick.from, pick.to);
+document.addEventListener("mouseup", () => {
+  if (!pick) return;
+  const { line, from, to } = pick; pick = null;
+  toggleWords(line, line.words.slice(Math.min(from, to), Math.max(from, to) + 1));
+  changed();
+});
+
+// UX-2: one queue, in pipeline order.
+function renderQueue(q) {
+  const card = $("#queue"); card.hidden = q.length === 0;
+  if (!q.length) return;
+  const d = q[qi], line = lineOf(d.line_id);
+  $("#q-count").textContent = `${qi + 1} of ${q.length}`;
+  const ready = q.filter(bulkReady).length, held = q.length - ready;
+  $("#q-all").textContent = ready === 1 ? "Accept 1 suggestion" : `Accept all ${ready} suggestions`; $("#q-all").hidden = ready === 0;
+  $("#q-warn").textContent = held && ready ? `${held} need${held === 1 ? "s" : ""} a listen first and will stay in the queue.` : "";
+  $("#q-stage").style.setProperty("--c", `var(--cat-${d.category})`);
+  $("#q-stage").textContent = LABEL[d.category] || d.category;
+  const text = line.words.map((w) => (d.word_ids.includes(w.id) ? `<span class="w prop" style="--c:var(--cat-${d.category})">${escapeHtml(w.w)}</span>` : escapeHtml(w.w))).join(" ");
+  const flag = d.flags?.includes("harsh") ? '<div class="flag">No clean silence around this one, so the cut may sound abrupt. Listen before you decide.</div>'
+    : d.flags?.includes("dropped-speech") ? '<div class="flag">Listen first. Accept cuts the whole line. Reject keeps it, with the captions as they are.</div>' : "";
+  $("#q-body").innerHTML = `${text}<div class="why">${escapeHtml(d.reason || "")}</div>${flag}`;
+}
+function step(n) { const q = queue(); if (!q.length) return; qi = (qi + n + q.length) % q.length; render(); document.querySelector(`.line[data-id="${q[qi].line_id}"]`)?.scrollIntoView({ block: "nearest", behavior: "smooth" }); }
+function decide(status) { const q = queue(); if (!q.length) return; bulkUndo = null; $("#msg").textContent = ""; resolve(q[qi], status); changed(); }
+// UX-3: hear it in context, 2 s either side. "cut" = with these words removed, "original" = as recorded.
+function previewCurrent(withCut = true) {
+  const q = queue(); if (!q.length) return;
+  const d = q[qi], s = d.start_ms / 1000, e = d.end_ms / 1000, from = Math.max(0, s - 2);
+  audition(withCut ? [{ source: d.source, in: from, out: s, lineId: d.line_id }, { source: d.source, in: e, out: e + 2, lineId: d.line_id }] : [{ source: d.source, in: from, out: e + 2, lineId: d.line_id }],
+    withCut ? "Hearing it with the cut" : "Hearing it as recorded");
+}
+$("#q-prev").onclick = () => step(-1);
+$("#q-next").onclick = () => step(1);
+$("#q-accept").onclick = () => decide("accepted");
+$("#q-reject").onclick = () => decide("rejected");
+$("#q-play").onclick = () => previewCurrent(true);
+$("#q-orig").onclick = () => previewCurrent(false);
+// Accept everything without an audio warning in one go, with a one-click undo.
+let bulkUndo = null;
+$("#q-all").onclick = () => {
+  const batch = queue().filter(bulkReady); if (!batch.length) return;
+  bulkUndo = batch.map((d) => ({ d, status: d.status, resolved_by: d.resolved_by }));
+  batch.forEach((d) => resolve(d, "accepted")); changed(); showUndo(batch.length);
+};
+function showUndo(n) {
+  if (!bulkUndo) return;
+  $("#msg").className = "msg"; $("#msg").innerHTML = `Accepted ${n}. <button class="undo" id="undo">Undo</button>`;
+  $("#undo").onclick = () => { bulkUndo.forEach(({ d, status, resolved_by }) => { d.status = status; d.resolved_by = resolved_by; }); bulkUndo = null; $("#msg").textContent = ""; changed(); };
+}
+document.addEventListener("keydown", (e) => {
+  if (e.metaKey || e.ctrlKey || e.altKey || /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+  const key = e.key.toLowerCase();
+  const map = { a: () => decide("accepted"), r: () => decide("rejected"), j: () => step(1), k: () => step(-1), p: () => previewCurrent(true), o: () => previewCurrent(false) };
+  if (map[key] && queue().length) { e.preventDefault(); map[key](); }
+});
+
+function act(l, a) {
+  if (a === "play") return audition([{ source: l.source, in: l.in, out: l.out, lineId: l.id }], "Playing one line as recorded");
+  if (a === "cut") { l.keep = !l.keep; l.cut = l.keep ? null : { category: "content", auto: false, reason: "cut in review" }; }
+  if (a === "take") { // RTK-7: picking a take restores it and cuts the others, one action
+    const g = cl.take_groups.find((x) => x.line_ids.includes(l.id)); g.selected = l.id;
+    g.line_ids.map(lineOf).forEach((m) => { m.keep = m.id === l.id; m.cut = m.keep ? null : { category: "retake", auto: false, reason: `retake of ${l.id} (take group ${g.id})` }; });
+  }
+  if (a === "note") { l._noteOpen = !l._noteOpen; return render(); }
+  changed();
+}
+
+// Anything that changes the cut: redraw now, then ask the engine for the real A-cut (length + Play all).
+function changed() {
+  render(); saveDraft();
+  clearTimeout(acutTimer);
+  acutTimer = setTimeout(async () => {
+    const r = await fetch("/api/acut", { method: "POST", body: JSON.stringify(payload()) });
+    if (r.ok) { state.acut = await r.json(); stopPlay(); indexAcut(); pos = Math.min(pos, total()); showPos(); render(); }
+  }, 150);
+}
+// Every choice is saved on the reel's folder as it is made, so nothing is lost if Send is refused or the tab closes.
+let draftTimer = 0;
+function saveDraft() { clearTimeout(draftTimer); draftTimer = setTimeout(() => fetch("/api/draft", { method: "POST", body: JSON.stringify(payload()) }).catch(() => {}), 300); }
+const payload = () => { const body = structuredClone(cl); body.lines.forEach((l) => delete l._noteOpen); return body; };
+
+// ---- playback
+// The scrubber and clock are your EDIT's timeline (0 → its real length), never the raw clip's.
+const total = () => state.acut?.seconds || 0;
+const clock = (t) => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, "0")}`;
+function indexAcut() { starts = []; let t = 0; for (const s of state.acut?.segments || []) { starts.push(t); t += s.out - s.in; } }
+function locate(t) { // edit time → which piece, and where in the source
+  const segs = state.acut.segments; let i = segs.length - 1;
+  for (let k = 0; k < segs.length; k++) if (t < starts[k] + (segs[k].out - segs[k].in)) { i = k; break; }
+  return { i, at: segs[i].in + Math.max(0, t - starts[i]) };
+}
+function showPos() { $("#scrub").value = total() ? Math.round((pos / total()) * 1000) : 0; $("#time").textContent = `${clock(pos)} / ${clock(total())}`; }
+function seekSource(source, t, then) {
+  const src = state.clips[source];
+  const go = () => { video.currentTime = t; then?.(); };
+  if (!video.src.endsWith(src)) { video.src = src; video.onloadedmetadata = go; } else go();
+}
+function cue(t) { // show the frame at edit time t without playing
+  pos = Math.max(0, Math.min(t, total())); showPos();
+  const segs = state.acut?.segments || []; if (!segs.length) return;
+  const { i, at } = locate(Math.min(pos, Math.max(0, total() - 0.001)));
+  seekSource(segs[i].source, at); markPlaying(segs[i].lineId);
+}
+function markPlaying(lineId) { document.querySelectorAll(".line").forEach((n) => n.classList.toggle("playing", lineId != null && n.dataset.id === lineId)); }
+function setIcon() { const on = playing && !video.paused; $("#pp").innerHTML = on ? ICON.pause : ICON.play; $("#pp").setAttribute("aria-label", on ? "Pause" : "Play your edit"); }
+function stopPlay() { cancelAnimationFrame(raf); const was = playing; playing = null; if (was) video.pause(); $("#mode").textContent = ""; setIcon(); if (was?.kind === "audition") showPos(); }
+function startRange(at) {
+  const r = playing.ranges[playing.i]; markPlaying(r.lineId);
+  seekSource(r.source, at ?? r.in, () => { video.play().catch(() => {}); tick(); });
+}
+function tick() {
+  cancelAnimationFrame(raf);
+  raf = requestAnimationFrame(() => {
+    if (!playing) return;
+    const r = playing.ranges[playing.i];
+    if (playing.kind === "edit") { pos = Math.min(total(), starts[playing.i] + Math.max(0, video.currentTime - r.in)); showPos(); }
+    if (video.currentTime >= r.out - 0.012) {
+      playing.i++;
+      const n = playing.ranges[playing.i];
+      if (!n) { const edit = playing.kind === "edit"; stopPlay(); if (edit) { pos = total(); showPos(); } return; }
+      if (n.source !== r.source || Math.abs(n.in - r.out) > 0.02) return startRange(); // a real cut: jump
+      markPlaying(n.lineId);                                                            // a butt join: keep rolling
+    }
+    tick();
+  });
+}
+// Play the edit from an edit-time position (default: where the scrubber is; from the top if it's at the end).
+function playEdit(from = pos) {
+  const segs = state.acut?.segments || []; if (!segs.length) return;
+  if (from >= total() - 0.05) from = 0;
+  const { i, at } = locate(from);
+  stopPlay(); playing = { ranges: segs, i, kind: "edit" }; pos = from; startRange(at); setIcon();
+}
+// Audition raw footage (one line, or a proposal in context). The edit's clock is left alone and labelled.
+function audition(ranges, label) { stopPlay(); if (!ranges.length) return; playing = { ranges, i: 0, kind: "audition" }; $("#mode").textContent = label; startRange(); setIcon(); }
+function togglePlay() {
+  if (playing && !video.paused) { video.pause(); cancelAnimationFrame(raf); }
+  else if (playing) { video.play().catch(() => {}); tick(); }
+  else playEdit();
+  setIcon();
+}
+video.addEventListener("play", setIcon); video.addEventListener("pause", setIcon);
+video.onclick = togglePlay;
+$("#pp").onclick = togglePlay;
+$("#scrub").oninput = (e) => {
+  const t = (e.target.value / 1000) * total();
+  const rolling = playing?.kind === "edit" && !video.paused;
+  if (rolling) playEdit(t); else { stopPlay(); cue(t); }
+};
+$("#playall").onclick = () => playEdit(0);
+
+$("#send").onclick = async () => {
+  clearTimeout(draftTimer);   // a late draft save would land after Send and be refused anyway; skip it
+  const r = await fetch("/api/send", { method: "POST", body: JSON.stringify(payload()) });
+  const j = await r.json();
+  if (!r.ok) { $("#msg").className = "msg"; $("#msg").textContent = j.errors.join(" "); return; }
+  $("#send").dataset.sent = "1"; $("#send").disabled = true;
+  showPlacement();
+};
+// ---- placement: the screen after Send. The server measures every spot for this clip with the render's own math; this only draws it.
+let place = null, spot = null, lookDirty = false, lookTimer = 0, beat = 0;
+const SPOT_ART = { above: '<rect x="5" y="5" width="12" height="2.5" rx="1.2" fill="currentColor"/>', below: '<rect x="5" y="23" width="12" height="2.5" rx="1.2" fill="currentColor"/>', low: '<rect x="5" y="28" width="12" height="2.5" rx="1.2" fill="currentColor"/>', "beside-left": '<rect x="1.5" y="14" width="4" height="2.5" rx="1.2" fill="currentColor"/>' };
+const spotArt = (s) => `<svg width="22" height="36" viewBox="0 0 22 36" aria-hidden="true"><rect x=".75" y=".75" width="20.5" height="34.5" rx="3" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="11" cy="15" r="5" fill="none" stroke="currentColor" stroke-width="1.5"/>${SPOT_ART[s] || ""}</svg>`;
+const pctY = (y) => `${(y / 1920) * 100}%`, pctX = (x) => `${(x / 1080) * 100}%`;
+const addStyle = (css) => document.head.appendChild(Object.assign(document.createElement("style"), { textContent: css }));
+async function showPlacement() {
+  stopPlay();
+  for (const s of [".top", ".wrap", ".bar"]) $(s).hidden = true;
+  $("#placement").hidden = false; scrollTo(0, 0);
+  const r = await fetch("/api/placement"), j = await r.json();
+  if (!r.ok) { $("#place-msg").textContent = `Couldn't load the caption spots: ${(j.errors || []).join(" ")} Tell Claude.`; $("#place-next").disabled = true; return; }
+  const z = j.zones;
+  addStyle(`@font-face{font-family:'ReelCaption';src:url('/font');font-weight:100 900;font-display:block}\n${j.controls_css}`);
+  Object.assign($("#zone-top").style, { top: 0, height: pctY(z.top) });
+  Object.assign($("#zone-maybe").style, { top: pctY(z.sometimes), height: pctY(z.always - z.sometimes) });
+  Object.assign($("#zone-bottom").style, { top: pctY(z.always), bottom: 0 });
+  Object.assign($("#zone-side").style, { top: pctY(z.top), height: pctY(z.always - z.top), width: pctX(1080 - z.right) });
+  for (const v of [$("#place-video"), $("#hook-video")]) { v.onloadedmetadata = () => (v.currentTime = j.sample.t); v.src = j.sample.clip; }
+  // The look: the caption picker's own option rows. Every change is tried on by the server, then drawn here.
+  $("#look-style").textContent = j.style;
+  const box = $("#look-controls"); box.innerHTML = j.controls;
+  for (const name of ["focus", "cap"]) {
+    const own = $(`#${name}-own`), swatches = () => box.querySelectorAll(`input[name="${name}"]`);
+    swatches().forEach((sw) => sw.addEventListener("change", () => (own.value = sw.value)));
+    own.addEventListener("input", () => { swatches().forEach((sw) => (sw.checked = false)); lookChanged(); });
+  }
+  box.addEventListener("change", lookChanged);
+  // A tab closed after Send comes back where she was: the draft's choices, each one only if it still holds.
+  const draft = cleanDraft(j.draft, j);
+  if (draft.position) spot = draft.position;
+  if (draft.make_default !== undefined) $("#place-default").checked = draft.make_default;
+  $("#place-default").onchange = savePlaceDraft;
+  drawPlacement(j);
+  initHook(j.hook, draft.hook, j.position);
+  if (draft.look && restoreLook(draft.look)) lookChanged();
+  showScreen(draft.screen === "hook" ? "hook" : "caption");
+  // Play the caption the way it plays on a reel: the focus color moves word to word, or one word shows at a time.
+  if (!matchMedia("(prefers-reduced-motion: reduce)").matches) setInterval(() => { beat++; drawCap(); }, 550);
+}
+// The two screens after Send. Moving between them saves nothing to the reel; only the draft follows along.
+function showScreen(which) {
+  screen = which;
+  $("#placement").hidden = which !== "caption"; $("#hook-screen").hidden = which !== "hook";
+  scrollTo(0, 0);
+}
+$("#place-next").onclick = () => { showScreen("hook"); savePlaceDraft(); };
+$("#hook-back").onclick = () => { showScreen("caption"); savePlaceDraft(); };
+// A saved draft, kept field by field: a spot, look or line that no longer holds falls back to the server's opening state.
+function cleanDraft(d, j) {
+  const out = { hook: {} }, isObj = (o) => !!o && typeof o === "object" && !Array.isArray(o);
+  if (!isObj(d)) return out;
+  if (d.screen === "caption" || d.screen === "hook") out.screen = d.screen;
+  if (typeof d.position === "string" && Object.hasOwn(j.spots ?? {}, d.position) && j.spots[d.position].available) out.position = d.position;
+  if (typeof d.make_default === "boolean") out.make_default = d.make_default;
+  if (isObj(d.look)) out.look = d.look;
+  const h = d.hook;
+  if (isObj(h)) {
+    if (typeof h.on === "boolean") out.hook.on = h.on;
+    if (typeof h.text === "string" && h.text.length <= 90) out.hook.text = h.text;
+    if (j.hook?.order?.includes(h.preset)) out.hook.preset = h.preset;
+    if (Number.isInteger(h.offset_y)) out.hook.offset_y = h.offset_y;
+  }
+  return out;
+}
+// Puts a saved look back on the look controls. A value with no matching option is left as the server opened it.
+function restoreLook(look) {
+  const box = $("#look-controls"), inputs = (name) => [...box.querySelectorAll(`input[name="${name}"]`)];
+  let any = false;
+  for (const name of ["font", "mode", "treatment"]) {
+    const input = inputs(name).find((i) => i.value === String(look[name]));
+    if (input) { input.checked = true; any = true; }
+  }
+  for (const [name, v] of [["focus", look.highlight_color], ["cap", look.color]]) {
+    if (typeof v !== "string" || !/^#[0-9a-f]{6}$/i.test(v)) continue;
+    const sw = inputs(name).find((i) => i.value.toLowerCase() === v.toLowerCase());
+    inputs(name).forEach((i) => (i.checked = i === sw));
+    $(`#${name}-own`).value = v.toLowerCase(); any = true;
+  }
+  return any;
+}
+// Every change on either screen is kept in a draft on the reel's folder, 300 ms after the last one.
+let placeDraftTimer = 0, placeDraftSent = Promise.resolve(), placeDone = false;
+const placeDraft = () => ({ screen, position: spot, make_default: $("#place-default").checked, look: lookDirty ? currentLook() : null, hook: { on: hook.on, text: hook.text, preset: hook.preset, offset_y: hook.offset_y } });
+function savePlaceDraft() {
+  if (placeDone) return;
+  clearTimeout(placeDraftTimer);
+  placeDraftTimer = setTimeout(() => (placeDraftSent = fetch("/api/placement-draft", { method: "POST", body: JSON.stringify(placeDraft()) }).catch(() => {})), 300);
+}
+// Draws what the server measured: which spots are open on this clip, and the caption in the current one.
+const caps = () => [$("#place-cap"), $("#hook-cap")];
+function drawPlacement(j) {
+  place = j;
+  const look = j.look;
+  // Pixel lengths on the 1080-wide frame become em, so the shadow scales with the caption on a small preview.
+  for (const cap of caps()) Object.assign(cap.style, { fontFamily: `'${look.font === "own" ? "ReelCaption" : look.family}', system-ui, sans-serif`, fontWeight: look.weight, color: look.color, textShadow: look.shadow.replace(/(-?[\d.]+)px/g, (_, n) => `${(n / look.size).toFixed(4)}em`) });
+  $("#place-spots").innerHTML = Object.entries(j.spots).map(([s, p]) => `<button type="button" class="spot" data-spot="${s}" aria-pressed="false"${p.available ? "" : ` disabled title="${escapeHtml(p.reason)}"`}>${spotArt(s)}<span>${escapeHtml(p.label)}</span></button>`).join("");
+  $("#place-spots").querySelectorAll("button").forEach((b) => (b.onclick = () => { selectSpot(b.dataset.spot); savePlaceDraft(); }));
+  $("#place-why").textContent = Object.values(j.spots).filter((p) => !p.available).map((p) => `${p.label}: ${p.reason}`).join(" ");
+  selectSpot(j.spots[spot]?.available ? spot : j.position);
+}
+function selectSpot(s) {
+  const p = place.spots[s]; if (!p?.available) return;
+  spot = s;
+  $("#place-spots").querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.spot === s)));
+  for (const cap of caps()) Object.assign(cap.style, { top: pctY(p.top), height: pctY(p.height), left: pctX(p.left), width: pctX(p.width), whiteSpace: p.oneWord ? "nowrap" : "normal" });
+  drawCap();
+  $("#place-note").textContent = [p.oneWord && place.look.mode !== "word" ? "One word at a time in this spot." : "", p.nudged ? "Moved a little to stay clear of what Instagram covers." : ""].filter(Boolean).join(" ");
+  $("#place-msg").textContent = "";
+  drawHook(); tryHook();   // a different caption spot can change whether captions wait, and which looks work
+}
+function drawCap() {
+  if (!place || !spot) return;
+  const p = place.spots[spot], look = place.look, all = place.sample.words;
+  const one = p.oneWord || look.mode === "word", k = beat % (one ? all.length : Math.min(look.words_per_line, all.length));
+  const shown = one ? [all[k]] : all.slice(0, look.words_per_line), lit = look.highlight === "none" ? -1 : one ? 0 : k;   // lit: the word being said
+  const html = shown.map((w, i) => `<span${i === lit ? ` style="color:${look.highlight_color}"` : ""}>${escapeHtml(look.case === "upper" ? w.toUpperCase() : w)}</span>`).join(" ");
+  for (const cap of caps()) { cap.style.fontSize = `calc(${(p.oneWord ? place.sample.sizes[k] : look.size) / 1080} * 100cqw)`; cap.innerHTML = html; }
+}
+function currentLook() {
+  const val = (name) => $(`#look-controls input[name="${name}"]:checked`)?.value, font = val("font");
+  return { font: font === "own" ? "own" : Number(font), mode: val("mode"), treatment: val("treatment"), highlight_color: val("focus") || $("#focus-own").value, color: val("cap") || $("#cap-own").value };
+}
+function lookChanged() {
+  lookDirty = true;
+  savePlaceDraft();
+  clearTimeout(lookTimer);
+  lookTimer = setTimeout(async () => {
+    const r = await fetch("/api/look", { method: "POST", body: JSON.stringify(currentLook()) }), j = await r.json();
+    if (r.ok) drawPlacement({ ...place, ...j }); else $("#place-msg").textContent = (j.errors || []).join(" ");
+  }, 120);
+}
+// Each way out posts /api/place once, which ends the review. Chat from the caption screen leaves the reel's hook card as it is;
+// from the hook screen it saves the hook as shown. "chat" tells Claude to hold the render and talk through more edits first.
+// Ready to render: a look chosen, a line, and that look works with it. Chat saves the hook only when it is ready, so chat is always a way out.
+const hookReady = () => hook.on && !!hook.text.trim() && !!hook.presets[hook.preset]?.available;
+const hookAsShown = () => (hookReady() ? { enabled: true, text: hook.text, preset: hook.preset, ...(hook.offset_y ? { offset_y: hook.offset_y } : {}) } : { enabled: false });
+$("#place-chat").onclick = () => finishPlacement("chat");
+$("#hook-chat").onclick = () => finishPlacement("chat", hookAsShown());
+$("#hook-go").onclick = () => finishPlacement("render", hookAsShown());
+$("#hook-skip").onclick = () => finishPlacement("render", { enabled: false });
+let busy = false;
+function setBusy(on) {
+  busy = on;
+  for (const id of ["#place-next", "#place-chat", "#hook-skip", "#hook-chat", "#hook-back"]) $(id).disabled = on;
+  drawHook();
+}
+async function finishPlacement(then, hookCard) {
+  const msg = screen === "hook" ? $("#hook-msg") : $("#place-msg");
+  setBusy(true); msg.textContent = "";
+  if (keyTimer) await commitOffset();   // an arrow-key move still waiting: the screen's check catches up with the offset being posted
+  clearTimeout(placeDraftTimer); await placeDraftSent;   // a draft still on its way could land after /api/place has cleared it
+  let r, j;
+  try { r = await fetch("/api/place", { method: "POST", body: JSON.stringify({ position: spot, make_default: $("#place-default").checked, ...(hookCard ? { hook: hookCard } : {}), ...(lookDirty ? { look: currentLook() } : {}), then }) }); j = await r.json(); }
+  catch { msg.textContent = "That didn't reach Claude. Check that the review is still running, then try again."; setBusy(false); return; }
+  if (!r.ok) { msg.textContent = (j.errors || []).join(" "); setBusy(false); return; }
+  placeDone = true; clearTimeout(placeDraftTimer);
+  showScreen("caption");
+  $("#place-step").hidden = true;
+  $("#place-h").textContent = then === "chat" ? "Saved, not rendering yet" : "Rendering your reel";
+  document.querySelector("#placement .lede").hidden = true;
+  const saved = j.look_saved ? ` Your ${escapeHtml(place.style)} style has the new look.` : j.default_saved ? " This spot is now your default." : "";
+  const what = then === "chat" ? "Your choices here are saved. Head back to Claude and say what you'd like to change. Nothing renders until you say so." : "Sent. Head back to Claude: your reel is rendering.";
+  $("#place-body").outerHTML = `<p class="card place-done" role="status">${what}${saved}</p>`;
+}
+// ---- hook card screen: the line and the look, tried on by the server and played in a page laid over the reel's frame.
+// hook.on false is the "No hook card" choice. offset_y: px on the 1080x1920 frame from where the look puts the card, down is positive.
+// tried: the line and caption spot the looks in hook.presets were measured for. Until a reply for the current ones comes back, the looks stay neutral.
+let hook = { on: false, text: "", preset: null, offset_y: 0, presets: {}, options: [], order: [] }, hookTimer = 0, hookSeq = 0, suggest = null, screen = "caption", gridKey = "", tried = "";
+// tapped: the look she tapped for this line. It stays chosen even when it can't be used, so she sees why instead of landing on another look.
+let tapped = null;
+const triedKey = (text, position) => JSON.stringify([text, position]);
+const measured = () => triedKey(hook.text, spot) === tried;
+// h: the server's opening hook, its looks measured for h.text at position. saved: the draft's hook fields on top of it.
+function initHook(h, saved = {}, position = spot) {
+  hook = { ...h, ...saved }; tried = triedKey(h.text, position);
+  suggest = hook.on ? null : hook.order[0];   // nothing chosen yet: point at the first look without choosing it
+  $("#hook-lines").innerHTML = hook.options.map((t, i) => `<button type="button" class="hook-line" role="radio" data-i="${i}" aria-checked="false">${escapeHtml(t)}</button>`).join("");
+  $("#hook-lines").querySelectorAll("button").forEach((b) => (b.onclick = () => { $("#hook-own").value = ""; setHookText(hook.options[b.dataset.i]); }));
+  $("#hook-own").value = hook.text && !hook.options.includes(hook.text) ? hook.text : "";
+  $("#hook-own").oninput = () => setHookText($("#hook-own").value, 400);
+  $("#hook-none").onclick = () => chooseLook(null);
+  $("#hook-replay").onclick = () => $("#hook-frame").contentWindow?.postMessage("replay", "*");
+  // the preview is a full-size page: scale it to whatever width the stage is right now
+  const fit = () => ($("#hook-frame").style.transform = `scale(${$("#hook-stage").clientWidth / 1080})`);
+  new ResizeObserver(fit).observe($("#hook-stage")); fit();
+  // the offset the loaded preview drew the card at, so a drag shifts it by the difference until the next one loads
+  $("#hook-frame").onload = () => { $("#hook-frame").dataset.offset = $("#hook-frame").dataset.next ?? "0"; placeCard(); };
+  // Settle and clamp only against looks measured for this line and spot; otherwise the reply to tryHook does it, so a restored look or offset is never lost.
+  if (measured()) { settleLook(); clampHookOffset(); }
+  drawHook();
+  if (Object.keys(saved).length || !measured()) tryHook();   // the draft's line, look or offset were not what the server tried on
+}
+// If her look cannot be used with this line, move to the first one that can. One she just tapped is left as her choice.
+function settleLook() {
+  if (hook.on && hook.text.trim() && hook.preset !== tapped && !hook.presets[hook.preset]?.available) hook.preset = hook.order.find((id) => hook.presets[id]?.available) ?? hook.preset;
+}
+// A stored offset can be outside the chosen look's drag range (a hand-written cut list, a changed caption spot): pull it back in.
+function clampOffset(offset, drag) { return drag ? Math.min(drag.down, Math.max(-drag.up, offset)) || 0 : 0; }
+function clampHookOffset() { const q = hook.presets[hook.preset]; if (q?.available) hook.offset_y = clampOffset(hook.offset_y, q.drag); }
+// ---- dragging the card. The grab layer sits over the card's box; a drag, or the arrow keys on the stage, moves offset_y inside the look's range.
+// While it moves, the card in the preview is shifted in place; on release the preview reloads at the new offset and the looks are tried on again.
+const TOO_SHORT_REEL = "This reel is too short for a hook card.", LINE_TOO_LONG = "This line is too long for a reel this short. A shorter line will fit.", FRAMES_FACE = "This look frames your face, so it stays put.";
+const KEY_STEP = 20;   // frame px per arrow key; Shift moves five steps
+let dragging = null, keyTimer = 0;
+// from: offset_y when the drag began. dy: screen px moved since. scale: frame px per screen px.
+function dragTo(from, dy, scale, drag) { return clampOffset(Math.round(from + dy * scale), drag); }
+function offsetText(o) { return o === 0 ? "Where the look puts it" : `${Math.abs(o)} px ${o < 0 ? "higher" : "lower"} than where the look puts it`; }
+// Every look measured for this line came back too short. With the reel itself long enough (hook.too_short false), a shorter line will fit.
+function allTooShort(order, presets) {
+  const ids = order.filter((id) => presets[id]);
+  return ids.length > 0 && ids.every((id) => !presets[id].available && presets[id].reason === TOO_SHORT_REEL);
+}
+const dragLook = () => { const p = hook.presets[hook.preset]; return hook.on && !!hook.text.trim() && measured() && p?.available && p.drag && p.box ? p : null; };
+// Puts the grab layer on the card, shifts the card in the preview to match, and tells the slider where it is.
+function placeCard() {
+  const p = dragLook(), stage = $("#hook-stage");
+  if (p) Object.assign($("#hook-drag").style, { top: pctY(p.box.top + hook.offset_y), height: pctY(p.box.height) });
+  const shift = hook.offset_y - (Number($("#hook-frame").dataset.offset) || 0);
+  try { const card = $("#hook-frame").contentDocument?.getElementById("hook"); if (card) card.style.translate = shift ? `0 ${shift}px` : ""; } catch {}
+  stage.setAttribute("aria-valuemin", String(p ? -p.drag.up : 0)); stage.setAttribute("aria-valuemax", String(p ? p.drag.down : 0));
+  stage.setAttribute("aria-valuenow", String(p ? hook.offset_y : 0)); stage.setAttribute("aria-valuetext", offsetText(p ? hook.offset_y : 0));
+}
+function moveCard(offset) { const p = dragLook(); if (!p) return; hook.offset_y = clampOffset(offset, p.drag); placeCard(); }
+// The value saved is the clamped offset the preview shows; the server then re-checks the looks there (warnings, captions waiting, the behind looks).
+function commitOffset() { clearTimeout(keyTimer); keyTimer = 0; drawHook(); savePlaceDraft(); return tryHook(); }
+$("#hook-drag").addEventListener("pointerdown", (e) => {
+  if (!dragLook() || e.button > 0 || busy) return;
+  e.preventDefault(); $("#hook-drag").setPointerCapture(e.pointerId);
+  dragging = { id: e.pointerId, y: e.clientY, from: hook.offset_y, scale: 1920 / $("#hook-stage").clientHeight };
+  $("#hook-stage").classList.add("dragging");
+});
+$("#hook-drag").addEventListener("pointermove", (e) => { if (dragging?.id === e.pointerId) moveCard(dragTo(dragging.from, e.clientY - dragging.y, dragging.scale, dragLook()?.drag)); });
+const endDrag = (e) => {
+  if (dragging?.id !== e.pointerId) return;
+  const moved = hook.offset_y !== dragging.from;
+  dragging = null; $("#hook-stage").classList.remove("dragging");
+  if (moved) commitOffset(); else drawHook();   // a reply that came in mid-drag may have a preview still to load
+};
+$("#hook-drag").addEventListener("pointerup", endDrag);
+$("#hook-drag").addEventListener("pointercancel", endDrag);
+$("#hook-stage").addEventListener("keydown", (e) => {
+  if ((e.key !== "ArrowUp" && e.key !== "ArrowDown") || !dragLook() || dragging || busy) return;
+  e.preventDefault();
+  moveCard(hook.offset_y + (e.key === "ArrowUp" ? -1 : 1) * KEY_STEP * (e.shiftKey ? 5 : 1));
+  clearTimeout(keyTimer); keyTimer = setTimeout(commitOffset, 400);   // held down, the preview and the check wait for the last step
+});
+function setHookText(text, wait = 0) { tapped = null; hook.text = text; drawHook(); savePlaceDraft(); clearTimeout(hookTimer); hookTimer = setTimeout(tryHook, wait); }
+// A tap on a look turns the hook on with it; a tap on "No hook card" turns it off. A different look starts where it puts the card.
+function chooseLook(id) {
+  suggest = null; tapped = id;
+  if (id === null) hook.on = false;
+  else {
+    const wasOn = hook.on, moved = id !== hook.preset && hook.offset_y !== 0;
+    if (id !== hook.preset) hook.offset_y = 0;
+    hook.on = true; hook.preset = id;
+    if (!wasOn || moved) tryHook();   // off, the behind looks were not checked; moved, the looks were tried at the old offset
+  }
+  drawHook(); savePlaceDraft();
+}
+// Ask the server how every look does with this line, for the caption spot she picked. With the hook off too, so the grid is right when she picks one.
+async function tryHook() {
+  const seq = ++hookSeq, text = hook.text, position = spot;   // counts blank lines too, so a reply still in flight cannot repaint
+  if (!text.trim()) return;
+  let r, j;
+  try {
+    r = await fetch("/api/hook", { method: "POST", body: JSON.stringify({ text, position, ...(hook.offset_y ? { offset_y: hook.offset_y } : {}), ...(lookDirty ? { look: currentLook() } : {}) }) });
+    j = await r.json();
+  } catch { if (seq === hookSeq) $("#hook-note").textContent = "That didn't reach Claude. Check that the review is still running."; return; }
+  if (seq !== hookSeq) return;   // a newer line or spot is already on its way
+  if (!r.ok) { $("#hook-note").textContent = (j.errors || []).join(" "); return; }
+  hook.presets = j.presets; hook.too_short = j.too_short === true; tried = triedKey(text, position);
+  settleLook(); clampHookOffset();
+  drawHook();
+}
+// One look tile. With no line yet every look stays neutral (tappable, no reason): the single note says what to do.
+function lookButton(id, q, blank, pressed) {
+  const open = q.available || blank;
+  return `<button type="button" class="hook-look" data-id="${id}" aria-pressed="${pressed}"${open ? "" : " disabled"}>`
+    + `<span class="hook-pic"><picture><source srcset="/look-picture/${id}?still=1" media="(prefers-reduced-motion: reduce)"><img src="/look-picture/${id}" alt="" width="270" height="480" loading="lazy" decoding="async"></picture>`
+    + `<span class="hook-tick" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M3 7.4 5.8 10 11 4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></span>`
+    + `<span class="hook-look-name">${escapeHtml(q.label)}</span>${id === "caption-match" ? "<small>uses your caption font</small>" : ""}${open ? "" : `<small class="hook-why">${escapeHtml(q.reason ?? "")}</small>`}</button>`;
+}
+function drawHook() {
+  // no line yet, or a new one still being tried on: any reason on the looks is stale or beside the point, so they stay neutral
+  const blank = !hook.text.trim(), neutral = blank || !measured();
+  const frame = $("#hook-frame"), p = hook.presets[hook.preset], shown = hook.on && !blank && !!p?.available;
+  // a reel too short for any hook (the server's word, whatever the line): only the skip and Back are left.
+  // Every look too short for this line alone: the line stays editable and the note says a shorter one fits.
+  const short = hook.too_short === true, tooLong = !short && !blank && measured() && allTooShort(hook.order, hook.presets);
+  $("#hook-screen").dataset.state = short ? "short" : "";
+  if (short) $("#hook-short").textContent = TOO_SHORT_REEL;
+  $("#hook-screen").dataset.choice = hook.on && !short ? "look" : "none";
+  $("#hook-stage").classList.toggle("is-none", !hook.on || short);
+  $("#hook-lines").querySelectorAll("button").forEach((b) => b.setAttribute("aria-checked", String(hook.options[b.dataset.i] === hook.text)));
+  // The tiles are only rebuilt when what they say changes, so the looping pictures don't restart on every keystroke.
+  const tiles = hook.order.filter((id) => hook.presets[id]).map((id) => lookButton(id, hook.presets[id], neutral, false)).join("");
+  if (tiles !== gridKey) {
+    gridKey = tiles;
+    $("#hook-grid").querySelectorAll(".hook-look:not(#hook-none)").forEach((n) => n.remove());
+    $("#hook-grid").insertAdjacentHTML("beforeend", tiles);
+    $("#hook-grid").querySelectorAll(".hook-look:not(#hook-none)").forEach((b) => (b.onclick = () => chooseLook(b.dataset.id)));
+  }
+  $("#hook-none").setAttribute("aria-pressed", String(!hook.on));
+  $("#hook-grid").querySelectorAll(".hook-look:not(#hook-none)").forEach((b) => { b.setAttribute("aria-pressed", String(hook.on && b.dataset.id === hook.preset)); b.classList.toggle("suggest", b.dataset.id === suggest); });
+  frame.hidden = !shown;
+  if (shown) {
+    const src = `/hook-preview?preset=${encodeURIComponent(hook.preset)}&position=${encodeURIComponent(spot)}&text=${encodeURIComponent(hook.text)}${hook.offset_y ? `&offset_y=${hook.offset_y}` : ""}${lookDirty ? `&look=${encodeURIComponent(JSON.stringify(currentLook()))}` : ""}`;
+    // not mid-drag: the card is being shifted in place, and the preview reloads once she lets go
+    if (frame.dataset.src !== src && !dragging) { frame.dataset.src = src; frame.dataset.next = String(hook.offset_y); frame.src = src; }
+  }
+  // The card drags unless the look frames her face; the stage is a slider only while it does.
+  const drags = !!dragLook(), fixed = shown && measured() && !p.drag, stage = $("#hook-stage"), stageNote = $("#hook-stage-note");
+  $("#hook-drag").hidden = !drags;
+  stage.tabIndex = drags ? 0 : -1; stage.setAttribute("aria-disabled", String(!drags));
+  if (!drags && document.activeElement === stage) stage.blur();   // no focus ring on a stage that no longer moves anything
+  stageNote.classList.toggle("is-fixed", fixed);
+  stageNote.textContent = fixed ? FRAMES_FACE : drags ? "Drag the card up or down. Arrow keys work too." : "";
+  placeCard();
+  // while the hook owns the caption's spot, the sample caption steps aside, the way it will in the reel
+  $("#hook-cap").style.visibility = shown && p.captions_wait ? "hidden" : "";
+  $("#hook-replay").hidden = !shown;
+  $("#hook-go").disabled = !hookReady() || busy;
+  const note = $("#hook-note");
+  if (tooLong) note.innerHTML = `<span class="hook-warn">${LINE_TOO_LONG}</span>`;
+  else if (!hook.on) note.textContent = "";
+  else if (blank) note.innerHTML = '<span class="hook-warn">Pick a line, or write your own.</span>';
+  else if (!measured()) note.textContent = "";
+  else if (!p?.available) note.innerHTML = p?.reason ? `<span class="hook-warn">${escapeHtml(p.reason)}</span>` : "";
+  else note.innerHTML = [`<span class="hook-fact">On screen for about ${p.seconds} seconds. ${p.captions_wait ? "Captions start after the hook." : "Captions run with the hook."}</span>`, ...(p.warnings ?? []).map((w) => `<span class="hook-warn">${escapeHtml(w)}</span>`)].join("");
+}
+function escapeHtml(s) { return String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]); }
+load();
+</script>
+</body>
+</html>
