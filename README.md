@@ -9,11 +9,16 @@ Turn 1-4 talking-head clips into a finished Instagram reel. Claude does the roug
 - About 1GB free for the tools and the speech model it downloads once
 
 ## Install
-Everything happens in the Claude desktop app. Leave the download as a zip; don't unzip it.
+Everything happens in the Claude desktop app.
 
-1. In the Claude desktop app, open **Customize**, then **Plugins**.
-2. Click **Add**, then **Upload plugin**, and pick the `reels-engine` zip you downloaded.
-3. **Start a new session in the Code tab** and type `/reels-engine:reel-setup`. It installs what's missing, then helps you set up your caption style: font, colors, and zoom.
+1. Start a session in the **Code** tab and paste this:
+
+   > Install the Reels Engine plugin from the GitHub marketplace scourtain/reels-engine.
+
+   Say yes when Claude asks to run the install.
+2. **Start a new session in the Code tab** and type `/reels-engine:reel-setup`. It installs what's missing, then helps you set up your caption style: font, colors, and zoom.
+
+Installed an earlier version from a zip? Remove that one first (Customize → Plugins), then do the two steps above. Your Reels folder and your styles stay as they are.
 
 ## Make a reel
 1. Drag 1-4 clips into the chat
@@ -51,7 +56,7 @@ Later on, if there's a reel whose look you love, run `/reels-engine:reel-style`,
 - **Editor handoff:** ask for the export. You get an FCPXML timeline pointing at your original footage, plus the transcript and a clean cut with nothing added.
 
 ## Updating
-Download the new zip and upload it the same way (Customize → Plugins → Add → Upload plugin). Start a new session.
+In the Code tab, say **"update the Reels Engine plugin"**, then start a new session. Your Reels folder, styles, and settings are never touched by an update.
 
 ## Good to know
 - Everything runs on your own computer (your Mac, or your PC on Windows). Your footage is never uploaded by this tool.
