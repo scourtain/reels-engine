@@ -2,7 +2,14 @@ import { HF, reelsHome } from "./paths.js";
 import { isMac, isWindows } from "./platform.js";
 import { matteTool } from "./hook/matte.js";
 
+// A cloud workspace (regular Claude chat, or a Code tab session set to the cloud) is Linux, blocks downloads, and can't show the review page.
+// Working around that cost a member 20 minutes and still no review page, so doctor stops here with one plain instruction.
+export const WRONG_PLACE = "This has to run on your own computer. In the Claude desktop app, start a new session in the Code tab set to run on your computer (not in the cloud), then type /reels-engine:reel-setup.";
+
 export async function doctor({ run, home = reelsHome(), plat = process.platform }) {
+  if (!isMac(plat) && !isWindows(plat)) {
+    return { ok: false, wrongPlace: true, checks: [{ name: "this computer", ok: false, detail: "Claude is not running on your own Mac or PC", fix: WRONG_PLACE }] };
+  }
   const fix = (mac, win) => (isWindows(plat) ? win : mac);
   const checks = [];
   const node = await run("node", ["--version"], { allowFail: true });

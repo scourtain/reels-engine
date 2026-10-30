@@ -23,7 +23,7 @@ import { exportProject } from "../src/export/index.js";
 import { appendFeedback, readFeedback } from "../src/feedback.js";
 import { createProject } from "../src/project.js";
 import { startFontPicker } from "../src/samples.js";
-import { openSpec, pickWhisperAsset, WHISPER_RELEASES_URL } from "../src/platform.js";
+import { openSpec, isMac, pickWhisperAsset, WHISPER_RELEASES_URL } from "../src/platform.js";
 
 // Every command that works on a cut list checks it first: repairs are saved and listed, anything else stops the command.
 async function checkedCutList(projectDir) {
@@ -34,6 +34,14 @@ async function checkedCutList(projectDir) {
 
 // Puts a file or the review page in front of the member with whatever their computer normally opens it with.
 function openInApp(target) { const o = openSpec(target); return run(o.cmd, o.args, { allowFail: true }); }
+
+// Opens a page in the member's browser and prints BROWSER_OPENED yes/no, so the skill knows to try Claude's own browser panel next.
+// Windows' explorer.exe exits 1 even when it worked, so only a launcher that couldn't start (127), or a Mac `open` that failed, counts as no.
+async function openPage(url) {
+  if (process.env.REELS_NO_OPEN) return;
+  const r = await openInApp(url);
+  console.log(`BROWSER_OPENED ${r.code === 127 || (isMac() && r.code !== 0) ? "no" : "yes"}`);
+}
 
 const [cmd, ...args] = process.argv.slice(2);
 const commands = {
@@ -91,7 +99,7 @@ const commands = {
     await checkedCutList(projectDir);
     const srv = await startReviewServer({ projectDir, home: reelsHome(), run });
     console.log(`REVIEW_URL ${srv.url}`);
-    if (!process.env.REELS_NO_OPEN) await openInApp(srv.url);
+    await openPage(srv.url);
     const cl = await srv.sent, saved = srv.saved();
     await srv.close();
     const kept = cl.lines.filter((l) => l.keep);
@@ -144,7 +152,7 @@ const commands = {
   async fonts() {
     const srv = await startFontPicker({ home: reelsHome() });
     console.log(`PICK_URL ${srv.url}`);
-    if (!process.env.REELS_NO_OPEN) await openInApp(srv.url);
+    await openPage(srv.url);
     const pick = await Promise.race([srv.picked, new Promise((r) => setTimeout(() => r(null), 30 * 60 * 1000))]);
     srv.close();
     console.log(JSON.stringify(pick ? { picked: true, ...pick } : { picked: false, note: "No pick came through from the page. Ask for the font, caption look and colors in chat." }));

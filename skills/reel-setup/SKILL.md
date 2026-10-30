@@ -9,6 +9,8 @@ ENGINE = `node "${CLAUDE_PLUGIN_ROOT}/engine/bin/reels.js"`
 HOME = `$REELS_HOME` if set, otherwise `~/Movies/Reels` on a Mac and `~/Videos/Reels` on Windows. `ENGINE init-home` prints it.
 In commands, always put HOME and PROJECT paths in double quotes, written out in full as the engine prints them (a `~` inside quotes does not work). On Windows they have backslashes and often spaces, which break without the quotes.
 
+**First, check where you're running:** `uname -s`. `Darwin` is a Mac; `MINGW` or `MSYS` at the start is Windows. Anything else (for example `Linux`) means this session is not on the member's own computer, usually a cloud workspace. Then tell them this line word for word and stop, installing nothing: "This has to run on your own computer. In the Claude desktop app, start a new session in the Code tab set to run on your computer (not in the cloud), then type /reels-engine:reel-setup." Do not build tools from source, download around blocks, move files across, swap the browser, or patch scripts to get it working there.
+
 **On Windows** (check with `uname -s`: it starts with `MINGW` or `MSYS` in Claude Code's shell on Windows), skip steps 1 and 2 below and do this instead:
 
 - **Node and ffmpeg:** check `node --version` (22 or newer) and `ffmpeg -version`. Install what is missing with `winget install --id OpenJS.NodeJS.LTS -e` and `winget install --id Gyan.FFmpeg -e`. Windows may show a "Do you want to allow this app to make changes" window: the member clicks Yes. If a tool still is not found right after installing, the engine also looks in winget's own folder; if `ENGINE doctor` still shows it red, ask the member to close and reopen Claude, then check again.
