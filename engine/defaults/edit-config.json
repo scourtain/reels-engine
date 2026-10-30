@@ -29,6 +29,7 @@
     "pre_roll_ms": 30,
     "post_roll_ms": 40,
     "post_roll_soft_ms": 80,
+    "end_hold_ms": 700,
     "crossfade_ms": 15,
     "silence_margin_db": 12,
     "silence_floor_db": -55,

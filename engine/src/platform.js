@@ -59,3 +59,16 @@ export async function linkFile(target, linkPath, { plat = process.platform, fsIm
   try { await fsImpl.link(target, linkPath); }
   catch (e) { if (!COPY_INSTEAD.has(e.code)) throw e; await fsImpl.copyFile(target, linkPath); }
 }
+
+// whisper.cpp stopped putting the Windows download on its "latest" release (v1.9.5 has no files; they sit on numbered build releases).
+// So look through recent releases, newest first, and take the first that has it.
+export const WHISPER_WIN_ASSET = "whisper-bin-x64.zip";
+export const WHISPER_RELEASES_URL = "https://api.github.com/repos/ggml-org/whisper.cpp/releases?per_page=30";
+export function pickWhisperAsset(releases = []) {
+  for (const r of releases) {
+    if (r.draft) continue;
+    const a = (r.assets || []).find((x) => x.name === WHISPER_WIN_ASSET);
+    if (a) return { tag: r.tag_name, url: a.browser_download_url };
+  }
+  return null;
+}

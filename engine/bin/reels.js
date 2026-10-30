@@ -23,7 +23,7 @@ import { exportProject } from "../src/export/index.js";
 import { appendFeedback, readFeedback } from "../src/feedback.js";
 import { createProject } from "../src/project.js";
 import { startFontPicker } from "../src/samples.js";
-import { openSpec } from "../src/platform.js";
+import { openSpec, pickWhisperAsset, WHISPER_RELEASES_URL } from "../src/platform.js";
 
 // Every command that works on a cut list checks it first: repairs are saved and listed, anything else stops the command.
 async function checkedCutList(projectDir) {
@@ -49,6 +49,14 @@ const commands = {
     if (clips && !clips.length) throw new Error("--clips needs at least one video file after it.");
     const dir = await createProject({ home: reelsHome(), name: nameParts.join(" ") || "reel", run, clips });
     console.log(dir);
+  },
+  // The Windows whisper download, for setup. Prints its URL, or exits 1 when no recent release has it.
+  async "whisper-url"() {
+    const res = await fetch(WHISPER_RELEASES_URL, { headers: { "User-Agent": "reels-engine" } });
+    if (!res.ok) throw new Error(`GitHub answered ${res.status}. Try again in a few minutes.`);
+    const picked = pickWhisperAsset(await res.json());
+    if (!picked) throw new Error("No recent whisper.cpp release has the Windows download.");
+    console.log(picked.url);
   },
   async "init-home"() { await initHome(reelsHome()); console.log(reelsHome()); },
   async prep(projectDir, styleName) {

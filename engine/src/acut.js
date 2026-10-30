@@ -105,7 +105,8 @@ export function assemble(cl, { transcript, envs, cfg, fps = 30 }) {
     }
   }
   const last = seq.at(-1);
-  const tail = Math.min(Math.max((softEnding(last.w.w) ? T.post_roll_soft_ms : T.post_roll_ms) / 1000, 0.15), Math.max(0, nextStart(last.w) - last.w.e));
+  // the reel's last word gets a held beat: words ring on past whisper's end time, and Instagram trims the final frames
+  const tail = Math.min(Math.max((softEnding(last.w.w) ? T.post_roll_soft_ms : T.post_roll_ms) / 1000, 0.15, (T.end_hold_ms ?? 0) / 1000), Math.max(0, nextStart(last.w) - last.w.e));
   close(snap(last.line.source, last.w.e + tail, last.w.e, last.w.e + Math.max(tail, frame)));
   return { segments, cuts, seconds: r6(seconds) };
 }
